@@ -89,8 +89,7 @@ def encode_shop(shop):
 
 
 def encode_method(method):
-    basic_data = {"id": method.pk, "name": force_text(method)}
-    return basic_data
+    return {"id": method.pk, "name": force_text(method)}
 
 
 def encode_line(line):
@@ -147,12 +146,7 @@ def get_line_data_for_edit(order, line):
             }
         )
     if line.supplier:
-        base_data.update(
-            {
-                "supplier": {"name": line.supplier.name, "id": line.supplier.id},
-            }
-        )
-
+        base_data["supplier"] = {"name": line.supplier.name, "id": line.supplier.id}
     return base_data
 
 

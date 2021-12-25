@@ -34,13 +34,11 @@ class ProductChildrenFormPart(ProductChildrenBaseFormPart):
         product = self.object
         if product.mode in self.invalid_modes:
             raise ValueError("Error! Invalid mode.")
-        else:
-            form = formset_factory(PackageChildForm, PackageChildFormSet, extra=5, can_delete=True)
-            template_name = "shuup/admin/products/package/_package_children.jinja"
+        form = formset_factory(PackageChildForm, PackageChildFormSet, extra=5, can_delete=True)
+        template_name = "shuup/admin/products/package/_package_children.jinja"
 
         form_defs = super(ProductChildrenFormPart, self).get_form_defs(form, template_name)
-        for form_def in form_defs:
-            yield form_def
+        yield from form_defs
 
 
 class ProductPackageViewToolbar(ProductParentBaseToolbar):
@@ -84,9 +82,8 @@ class ProductPackageView(ProductParentBaseView):
 
     def dispatch_command(self, request, command):
         product = self.object
-        if command == "clear_package":
-            clear_existing_package(product)
-            messages.success(self.request, _("Package cleared."))
-        else:
+        if command != "clear_package":
             raise Problem("Error! Unknown command: `%s`." % command)
+        clear_existing_package(product)
+        messages.success(self.request, _("Package cleared."))
         return HttpResponseRedirect(self.get_success_url())

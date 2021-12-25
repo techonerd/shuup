@@ -48,18 +48,15 @@ class ViewSettings(object):
 
             column.ordering = config.get("ordering", 9999) if not old_mode else 9999
 
-            if old_mode:
-                # old and active
-                if config > 1:
-                    self.active_columns.append(column)
-                else:
-                    self.inactive_columns.append(column)
+            if (
+                old_mode
+                and config > 1
+                or not old_mode
+                and config.get("active", False)
+            ):
+                self.active_columns.append(column)
             else:
-                if config.get("active", False):
-                    self.active_columns.append(column)
-                else:
-                    self.inactive_columns.append(column)
-
+                self.inactive_columns.append(column)
         self.active_columns.sort(key=lambda x: x.ordering)
         self.inactive_columns.sort(key=lambda x: x.title)
         self.columns = self.active_columns
@@ -72,8 +69,7 @@ class ViewSettings(object):
             self.set_config("saved", True)
 
     def get_config(self, value):
-        val = configuration.get(None, self.get_settings_key(value), {})
-        return val
+        return configuration.get(None, self.get_settings_key(value), {})
 
     def set_config(self, key_value, value, use_key=False):
         key = self.get_settings_key(key_value) if not use_key else key_value
@@ -106,7 +102,7 @@ class ViewSettings(object):
             self._add_m2m_columns(all_models, columns, defaults, identifier, known_names, model)
             self._add_provided_columns(columns, identifier, known_names, model)
 
-        table_columns = set([col.id for col in columns])
+        table_columns = {col.id for col in columns}
         for default_column in self.default_columns:
             if default_column.id not in table_columns and default_column.id != "select":
                 columns.append(default_column)
@@ -141,9 +137,8 @@ class ViewSettings(object):
             if django.VERSION < (1, 9):
                 if isinstance(field, ForeignKey) and field.rel.to in models_from_all_models:
                     continue  # no need to have these...
-            else:
-                if isinstance(field, ForeignKey) and field.remote_field.target_field in models_from_all_models:
-                    continue  # no need to have these...
+            elif isinstance(field, ForeignKey) and field.remote_field.target_field in models_from_all_models:
+                continue  # no need to have these...
 
             column = self._get_column(model, field, known_names, identifier)
             if column:
@@ -174,12 +169,15 @@ class ViewSettings(object):
         display = "%s__%s" % (identifier, field.name) if identifier else field.name
 
         column = Column(
-            "%s_%s" % ((identifier if identifier else model.__name__.lower()), field.name),
+            "%s_%s" % (identifier or model.__name__.lower(), field.name),
             field_name,
             sort_field=display,
             display=display,
-            filter_config=TextFilter(filter_field=filter_field, placeholder=field_name),
+            filter_config=TextFilter(
+                filter_field=filter_field, placeholder=field_name
+            ),
         )
+
         return self.handle_special_column(field, column)[0]
 
     def handle_special_column(self, field, column):
@@ -201,8 +199,11 @@ class ViewSettings(object):
         display = "%s__%s" % (identifier, field.name) if identifier else field.name
 
         column = Column(
-            "%s_%s" % ((identifier if identifier else model.__name__.lower()), field.name), field_name, display=display
+            "%s_%s" % (identifier or model.__name__.lower(), field.name),
+            field_name,
+            display=display,
         )
+
 
         column, is_special = self.handle_special_column(field, column)
         if not is_special:

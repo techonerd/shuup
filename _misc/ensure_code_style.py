@@ -23,7 +23,7 @@ class ForeignKeyVisitor(XNodeVisitor):
     def visit_Call(self, node, parents):  # noqa (N802)
         name = dotify_ast_name(node.func)
         if any(name.endswith(suffix) for suffix in ("ForeignKey", "FilerFileField", "FilerImageField")):
-            kwmap = dict((kw.arg, kw.value) for kw in node.keywords)
+            kwmap = {kw.arg: kw.value for kw in node.keywords}
             if "on_delete" not in kwmap:
                 self.errors.append("Error! %d: %s call missing explicit `on_delete`." % (node.lineno, name))
 
@@ -44,14 +44,13 @@ class VerboseNameVisitor(XNodeVisitor):
         if not any(name.endswith(suffix) for suffix in ("ForeignKey", "Field")):
             return
 
-        if not context:
-            if isinstance(parents[-1], ast.Assign):
-                context = get_assign_first_target(parents[-1])
+        if not context and isinstance(parents[-1], ast.Assign):
+            context = get_assign_first_target(parents[-1])
 
         if context and (context.startswith("_") or context.endswith("data")):
             return
 
-        kwmap = dict((kw.arg, kw.value) for kw in node.keywords)
+        kwmap = {kw.arg: kw.value for kw in node.keywords}
 
         kw_value = None
         needle = None
@@ -73,12 +72,18 @@ class VerboseNameVisitor(XNodeVisitor):
 
         if isinstance(kw_value, ast.Call) and dotify_ast_name(kw_value.func) == "_":
             arg = kw_value.args[0]
-            if isinstance(arg, ast.Str) and needle == "verbose_name":
-                if not arg.s[0].islower() and not any(arg.s.startswith(acronym) for acronym in KNOWN_ACRONYMS):
-                    self.errors.append(
-                        "Error! %d: %s `%s` not lower-case (value: %r) (ctx: %s)."
-                        % (node.lineno, name, needle, arg.s, context)
-                    )
+            if (
+                isinstance(arg, ast.Str)
+                and needle == "verbose_name"
+                and not arg.s[0].islower()
+                and not any(
+                    arg.s.startswith(acronym) for acronym in KNOWN_ACRONYMS
+                )
+            ):
+                self.errors.append(
+                    "Error! %d: %s `%s` not lower-case (value: %r) (ctx: %s)."
+                    % (node.lineno, name, needle, arg.s, context)
+                )
             return
 
         if isinstance(kw_value, ast.Name):  # It's a variable

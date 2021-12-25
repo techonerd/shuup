@@ -33,7 +33,4 @@ class GDPRSnippetBlocker(SnippetBlocker):
         consented_cookies = set(list(consent_data.get("cookies") or []))
 
         # the snippet can be only injected if the user consented to all cookies
-        if unique_cookies & consented_cookies == unique_cookies:
-            return False
-
-        return True
+        return unique_cookies & consented_cookies != unique_cookies

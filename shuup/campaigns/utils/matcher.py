@@ -128,9 +128,7 @@ class ProductCampaignMatcher(object):
         if self.shop_product.primary_category and self.shop_product.primary_category.pk in existing:
             return True
         cats = set(self.shop_product.categories.values_list("pk", flat=True))
-        if cats.intersection(existing):
-            return True
-        return False
+        return bool(cats.intersection(existing))
 
     def _category_matches(self, field_name, obj):
         attr = getattr(obj, field_name)

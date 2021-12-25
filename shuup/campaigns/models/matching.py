@@ -21,10 +21,12 @@ def get_matching_context_conditions(context):
     conditions_cache_key = "%s:%s" % (namespace, hashlib.sha1(str(sorted_items).encode("utf-8")).hexdigest())
     matching_context_conditions = cache.get(conditions_cache_key, None)
     if matching_context_conditions is None:
-        matching_context_conditions = set()
-        for condition in ContextCondition.objects.filter(active=True):
-            if condition.matches(context):
-                matching_context_conditions.add(condition.pk)
+        matching_context_conditions = {
+            condition.pk
+            for condition in ContextCondition.objects.filter(active=True)
+            if condition.matches(context)
+        }
+
         cache.set(conditions_cache_key, matching_context_conditions, timeout=None)
     return matching_context_conditions
 

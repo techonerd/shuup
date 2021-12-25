@@ -54,7 +54,7 @@ class ImportProcessView(TemplateView):
         return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        mapping = dict()
+        mapping = {}
 
         for field in request.POST.keys():
             if field.startswith("remap["):
@@ -92,7 +92,7 @@ class ImportProcessView(TemplateView):
         )
         file_importer.prepare()
 
-        settings_form = ImportSettingsForm(data=self.request.POST if self.request.POST else None)
+        settings_form = ImportSettingsForm(data=self.request.POST or None)
         if settings_form.is_bound:
             settings_form.is_valid()
 

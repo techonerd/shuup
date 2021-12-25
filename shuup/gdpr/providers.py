@@ -98,18 +98,17 @@ class GDPRAuthFieldProvider(GDPRFieldProvider):
         if not gdpr_settings:
             return []
 
-        if gdpr_settings.skip_consent_on_auth:
-            auth_consent_text = gdpr_settings.safe_translation_getter("auth_consent_text")
-            return [
-                FormFieldDefinition(
-                    name="auth_consent_text",
-                    field=forms.CharField(
-                        label="", initial="", required=False, widget=TextOnlyWidget(attrs={"value": auth_consent_text})
-                    ),
-                )
-            ]
-        else:
+        if not gdpr_settings.skip_consent_on_auth:
             return super(GDPRAuthFieldProvider, self).get_fields(**kwargs)
+        auth_consent_text = gdpr_settings.safe_translation_getter("auth_consent_text")
+        return [
+            FormFieldDefinition(
+                name="auth_consent_text",
+                field=forms.CharField(
+                    label="", initial="", required=False, widget=TextOnlyWidget(attrs={"value": auth_consent_text})
+                ),
+            )
+        ]
 
 
 class GDPRBaseUserDataProvider(object):

@@ -12,17 +12,10 @@ from pkg_resources import WorkingSet
 
 
 def get_addons_from_entry_points():
-    # TODO: Document me
-    addons = set()
-
-    # Use `pkg_resources.WorkingSet().iter_entry_points()` instead of
-    # `pkg_resources.iter_entry_points()` to ensure we get a fresh list
-    # regardless of whether the current cached working set has changed.
-    # (The working set will change if addons are installed.)
-
-    for entry_point in WorkingSet().iter_entry_points(group="shuup.addon"):
-        addons.add(entry_point.name)
-    return addons
+    return {
+        entry_point.name
+        for entry_point in WorkingSet().iter_entry_points(group="shuup.addon")
+    }
 
 
 def get_enabled_addons(file_path):

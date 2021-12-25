@@ -58,10 +58,7 @@ class TagRegistry(object):
 
     def register(self, tag, classes, encoder=text_type, decoder=None):
         if decoder is None:
-            if isinstance(classes, (list, tuple)):
-                decoder = classes[0]
-            else:
-                decoder = classes
+            decoder = classes[0] if isinstance(classes, (list, tuple)) else classes
         if not callable(decoder):
             raise ValueError("Error! Decoder `%r` for tag `%r` is not callable." % (decoder, tag))
         if not callable(encoder):

@@ -187,13 +187,12 @@ class CustomPaymentProcessor(PaymentProcessor):
         return service
 
     def process_payment_return_request(self, service, order, request):
-        if service == "cash":
-            if not order.is_paid():
-                order.create_payment(
-                    order.taxful_total_price,
-                    payment_identifier="Cash-%s" % now().isoformat(),
-                    description="Cash Payment",
-                )
+        if service == "cash" and not order.is_paid():
+            order.create_payment(
+                order.taxful_total_price,
+                payment_identifier="Cash-%s" % now().isoformat(),
+                description="Cash Payment",
+            )
 
 
 PaymentMethodLogEntry = define_log_model(PaymentMethod)

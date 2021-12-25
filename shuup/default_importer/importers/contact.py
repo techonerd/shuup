@@ -20,9 +20,7 @@ class AddressHandlerMeta(ImportMetaBase):
     def handle_row_address(self, fields, row_session):
         row = row_session.row
         contact = row_session.instance
-        data = {}
-        for field in fields:
-            data[field.replace(" ", "_")] = row.get(field, "")
+        data = {field.replace(" ", "_"): row.get(field, "") for field in fields}
         data["name"] = contact.name
         data["email"] = contact.email
         data["phone"] = contact.phone

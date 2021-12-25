@@ -87,7 +87,7 @@ class _PriceSum(object):
         taxful = self.params.get("includes_tax", instance.prices_include_tax)
         zero = (TaxfulPrice if taxful else TaxlessPrice)(0, instance.currency)
         lines = getattr(instance, self.line_getter)()
-        return sum([getattr(x, self.field) for x in lines], zero)
+        return sum((getattr(x, self.field) for x in lines), zero)
 
     @property
     def or_none(self):
@@ -193,7 +193,7 @@ class OrderSource(object):
             modified_by=order.modified_by,
             payment_method_id=order.payment_method_id,
             shipping_method_id=order.shipping_method_id,
-            customer_comment=(order.customer_comment if order.customer_comment else ""),
+            customer_comment=order.customer_comment or "",
             marketing_permission=order.marketing_permission,
             language=order.language,
             display_currency=order.display_currency,
@@ -307,14 +307,13 @@ class OrderSource(object):
 
     @property
     def product_ids(self):
-        return set(x.product.id for x in self.get_lines() if x.product)
+        return {x.product.id for x in self.get_lines() if x.product}
 
     def has_shippable_lines(self):
-        for line in self.get_lines():
-            if line.product:
-                if line.product.shipping_mode == ShippingMode.SHIPPED:
-                    return True
-        return False
+        return any(
+            line.product and line.product.shipping_mode == ShippingMode.SHIPPED
+            for line in self.get_lines()
+        )
 
     @property
     def codes(self):
@@ -404,7 +403,7 @@ class OrderSource(object):
 
         :rtype: decimal.Decimal
         """
-        return sum([line.quantity for line in self.get_product_lines()])
+        return sum(line.quantity for line in self.get_product_lines())
 
     @property
     def smart_product_count(self):
@@ -470,9 +469,10 @@ class OrderSource(object):
         if lines is None:
             lines = self.__compute_lines()
             self._processed_lines_cache = lines
-        if not self._taxes_calculated:
-            if with_taxes or should_calculate_taxes_automatically():
-                self._calculate_taxes(lines)
+        if not self._taxes_calculated and (
+            with_taxes or should_calculate_taxes_automatically()
+        ):
+            self._calculate_taxes(lines)
         return lines
 
     def calculate_taxes(self, force_recalculate=False):
@@ -522,13 +522,11 @@ class OrderSource(object):
 
     def _compute_payment_method_lines(self):
         if self.payment_method:
-            for line in self.payment_method.get_lines(self):
-                yield line
+            yield from self.payment_method.get_lines(self)
 
     def _compute_shipping_method_lines(self):
         if self.shipping_method:
-            for line in self.shipping_method.get_lines(self):
-                yield line
+            yield from self.shipping_method.get_lines(self)
 
     def _add_lines_from_modifiers(self, lines):
         """
@@ -547,8 +545,7 @@ class OrderSource(object):
         final lines are being computed (for example to determine shipping
         discounts based on the total price of all products).
         """
-        product_lines = [line for line in self.get_lines() if line.product]
-        return product_lines
+        return [line for line in self.get_lines() if line.product]
 
     def verify_orderability(self):
         for error_message in self.get_validation_errors():
@@ -558,11 +555,10 @@ class OrderSource(object):
         from shuup.apps.provides import get_provide_objects
 
         for order_source_validator in get_provide_objects("order_source_validator"):
-            for error in order_source_validator.get_validation_errors(self):
-                yield error
+            yield from order_source_validator.get_validation_errors(self)
 
     def _get_suppliers(self):
-        return set([line.supplier for line in self.get_lines() if line.supplier])
+        return {line.supplier for line in self.get_lines() if line.supplier}
 
     def _get_products_and_quantities(self, supplier=None):
         q_counter = Counter()

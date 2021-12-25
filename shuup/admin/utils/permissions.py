@@ -29,12 +29,10 @@ def get_default_model_permissions(model):
         "Use human readable permission strings instead.",
         DeprecationWarning,
     )
-    permissions = set()
-
-    for default in model._meta.default_permissions:
-        permissions.add("%s.%s_%s" % (model._meta.app_label, default, model._meta.model_name))
-
-    return permissions
+    return {
+        "%s.%s_%s" % (model._meta.app_label, default, model._meta.model_name)
+        for default in model._meta.default_permissions
+    }
 
 
 def get_missing_permissions(user, permissions):
@@ -68,12 +66,11 @@ def get_missing_permissions(user, permissions):
             group_permissions = get_permissions_from_groups(user.groups.values_list("pk", flat=True))
             cache.set(cache_key, group_permissions)
 
-    if group_permissions:
-        missing_permissions = set(p for p in set(permissions) if p not in group_permissions)
-    else:
-        missing_permissions = set(permissions)
-
-    return missing_permissions
+    return (
+        {p for p in set(permissions) if p not in group_permissions}
+        if group_permissions
+        else set(permissions)
+    )
 
 
 def has_permission(user, permission):

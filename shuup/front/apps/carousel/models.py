@@ -57,8 +57,7 @@ class SlideQuerySet(TranslatableQuerySet):
         if not dt:
             dt = now()
         q = Q(available_from__lte=dt) & (Q(available_to__gte=dt) | Q(available_to__isnull=True))
-        qs = self.filter(q)
-        return qs
+        return self.filter(q)
 
 
 @python_2_unicode_compatible

@@ -64,12 +64,12 @@ class BasketCampaignModule(OrderSourceModifierModule):
     def get_new_lines(self, order_source, lines):
         matching_campaigns = BasketCampaign.get_matching(order_source, lines)
 
-        for line in self._handle_line_effects(matching_campaigns, order_source, lines):
-            yield line
-
+        yield from self._handle_line_effects(matching_campaigns, order_source, lines)
         # total discounts must be run after line effects since lines can be changed in place
-        for line in self._handle_total_discount_effects(matching_campaigns, order_source, lines):
-            yield line
+        # total discounts must be run after line effects since lines can be changed in place
+        yield from self._handle_total_discount_effects(
+            matching_campaigns, order_source, lines
+        )
 
     def _get_campaign_line(self, campaign, highest_discount, order_source, supplier):
         text = campaign.public_name
@@ -97,16 +97,19 @@ class BasketCampaignModule(OrderSourceModifierModule):
                 continue
 
             coupon_code = campaign.coupon
-            suppliers = set([supplier for supplier in (campaign.supplier, coupon_code.supplier) if supplier])
+            suppliers = {
+                supplier
+                for supplier in (campaign.supplier, coupon_code.supplier)
+                if supplier
+            }
+
             if suppliers:
                 has_supplier = False
 
-                # make sure there is at least one item in the order source that has this supplier
-                has_supplier = False
-                for line in order_source.get_final_lines():
-                    if line.supplier in suppliers:
-                        has_supplier = True
-                        break
+                has_supplier = any(
+                    line.supplier in suppliers
+                    for line in order_source.get_final_lines()
+                )
 
                 # there is no line that matches the coupon or the campaign supplier
                 if not has_supplier:

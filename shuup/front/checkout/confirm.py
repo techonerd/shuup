@@ -74,7 +74,7 @@ class ConfirmPhase(CheckoutPhaseViewMixin, FormView):
         not_accepted_keys = [
             key for key in self.storage.keys() if key.startswith("accept_") and not self.storage.get(key)
         ]
-        return bool(len(not_accepted_keys) == 0)
+        return bool(not not_accepted_keys)
 
     def _get_product_ids(self):
         return [str(product_id) for product_id in self.basket.get_product_ids_and_quantities().keys()]
@@ -109,11 +109,17 @@ class ConfirmPhase(CheckoutPhaseViewMixin, FormView):
         self.checkout_process.complete()  # Inform the checkout process it's completed
 
         # make sure to set marketing permission asked once
-        if "marketing" in form.fields and order.customer:
-            if not order.customer.options or not order.customer.options.get("marketing_permission_asked"):
-                order.customer.options = order.customer.options or {}
-                order.customer.options["marketing_permission_asked"] = True
-                order.customer.save(update_fields=["options"])
+        if (
+            "marketing" in form.fields
+            and order.customer
+            and (
+                not order.customer.options
+                or not order.customer.options.get("marketing_permission_asked")
+            )
+        ):
+            order.customer.options = order.customer.options or {}
+            order.customer.options["marketing_permission_asked"] = True
+            order.customer.save(update_fields=["options"])
 
         if order.require_verification:
             response = redirect("shuup:order_requires_verification", pk=order.pk, key=order.key)

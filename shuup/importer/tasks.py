@@ -25,14 +25,10 @@ LOGGER = logging.getLogger(__name__)
 def import_file(importer, import_mode, file_name, language, shop_id, supplier_id=None, user_id=None, mapping=None):
     shop = Shop.objects.get(pk=shop_id)
     supplier = None
-    user = None
-
     if supplier_id:
         supplier = Supplier.objects.filter(pk=supplier_id).first()
 
-    if user_id:
-        user = get_user_model().objects.get(pk=user_id)
-
+    user = get_user_model().objects.get(pk=user_id) if user_id else None
     # convert to enum
     import_mode = ImportMode(import_mode)
 
@@ -52,20 +48,22 @@ def import_file(importer, import_mode, file_name, language, shop_id, supplier_id
                 log_messages=[str(msg) for msg in importer_instance.log_messages],
             )
 
-            new_objects = []
-            updated_objects = []
+            new_objects = [
+                {
+                    "model": f"{new_object._meta.app_label}.{new_object._meta.model_name}",
+                    "pk": new_object.pk,
+                }
+                for new_object in importer_instance.new_objects
+            ]
 
-            for new_object in importer_instance.new_objects:
-                new_objects.append(
-                    {"model": f"{new_object._meta.app_label}.{new_object._meta.model_name}", "pk": new_object.pk}
-                )
-            for updated_object in importer_instance.updated_objects:
-                updated_objects.append(
-                    {
-                        "model": f"{updated_object._meta.app_label}.{updated_object._meta.model_name}",
-                        "pk": updated_object.pk,
-                    }
-                )
+            updated_objects = [
+                {
+                    "model": f"{updated_object._meta.app_label}.{updated_object._meta.model_name}",
+                    "pk": updated_object.pk,
+                }
+                for updated_object in importer_instance.updated_objects
+            ]
+
 
             result["new_objects"] = new_objects
             result["updated_objects"] = updated_objects

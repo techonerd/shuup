@@ -123,7 +123,7 @@ class TaxModule(six.with_metaclass(abc.ABCMeta)):
         context = self.get_context_from_order_source(source)
         lines_without_tax_class = []
         taxed_lines = []
-        for (idx, line) in enumerate(lines):
+        for line in lines:
             # this line doesn't belong to this source, ignore it
             if line.source != source:
                 continue
@@ -225,7 +225,7 @@ class TaxModule(six.with_metaclass(abc.ABCMeta)):
 
         base_amount = amount
         if not order.prices_include_tax:
-            base_amount /= 1 + sum([tax.tax.rate for tax in taxes])
+            base_amount /= 1 + sum(tax.tax.rate for tax in taxes)
 
         from shuup.core.models import OrderLine, OrderLineType
 

@@ -54,11 +54,7 @@ class Chart(six.with_metaclass(abc.ABCMeta)):
         self.data_type = data_type
         self.currency = currency
 
-        if locale:
-            self.locale = locale
-        else:
-            self.locale = get_current_babel_locale()
-
+        self.locale = locale or get_current_babel_locale()
         if data_type == ChartDataType.CURRENCY and not currency:
             raise AttributeError("You should also set currency for this data type")
 

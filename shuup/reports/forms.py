@@ -65,8 +65,7 @@ class ShuupReportForm(forms.Form):
         writer_name = data.pop("writer")
         if request:
             data.update({"request": request})
-        report = report_class(writer_name=writer_name, **data)
-        return report
+        return report_class(writer_name=writer_name, **data)
 
 
 class BaseReportForm(ShuupReportForm):

@@ -295,7 +295,7 @@ class ImmutableAddress(ChangeProtected, Address):
         # Populate all known address fields even if not originally in `data`
         data_with_all_fields = get_data_dict(cls(**data))
         address = cls.objects.filter(**data_with_all_fields).first()
-        return address if address else cls.objects.create(**data_with_all_fields)
+        return address or cls.objects.create(**data_with_all_fields)
 
     def to_immutable(self):
         if self.pk:

@@ -43,12 +43,9 @@ class OrderSourceMethodsUnavailabilityReasonsValidator(object):
         payment_method = order_source.payment_method
 
         if shipping_method:
-            for error in shipping_method.get_unavailability_reasons(source=order_source):
-                yield error
-
+            yield from shipping_method.get_unavailability_reasons(source=order_source)
         if payment_method:
-            for error in payment_method.get_unavailability_reasons(source=order_source):
-                yield error
+            yield from payment_method.get_unavailability_reasons(source=order_source)
 
 
 class OrderSourceSupplierValidator(object):

@@ -47,7 +47,7 @@ def media_upload(request, *args, **kwargs):
         for validation_error in form.errors.as_data().get("file", []):
             error_messages += validation_error.messages
 
-        return JsonResponse({"error": ", ".join([msg for msg in error_messages])}, status=400)
+        return JsonResponse({"error": ", ".join(list(error_messages))}, status=400)
 
     ensure_media_file(shop, filer_file)
     return JsonResponse({"file": filer_file_to_json_dict(filer_file)})

@@ -51,8 +51,7 @@ def check_sanity_of_files(paths, ignored_paths):
     for path in paths:
         if path in ignored_paths:
             continue
-        for error in check_sanity_of_file(path):
-            yield error
+        yield from check_sanity_of_file(path)
 
 
 def check_sanity_of_file(path):

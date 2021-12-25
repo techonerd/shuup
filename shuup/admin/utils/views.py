@@ -62,7 +62,7 @@ class CreateOrUpdateView(UpdateView):
             context["quick_add_target"] = self.request.GET.get("quick_add_target", "")
             context["quick_add_callback"] = self.request.GET.get("quick_add_callback", "")
             context["quick_add_option_id"] = self.object.id
-            context["quick_add_option_name"] = name if name else _("Unnamed")
+            context["quick_add_option_name"] = name or _("Unnamed")
         return context
 
     def get_save_form_id(self):
@@ -164,11 +164,7 @@ def add_create_or_change_message(request, instance, is_new):
     else:
         msg = _("Item")  # instance is not always present. For example when saving configurations.
 
-    if is_new:
-        msg = _("New %s was created.") % msg
-    else:
-        msg = _("%s was edited.") % msg
-
+    msg = _("New %s was created.") % msg if is_new else _("%s was edited.") % msg
     messages.success(request, msg)
 
 
@@ -188,11 +184,7 @@ def get_create_or_change_title(request, instance, name_field=None):
     if not instance.pk:
         return _("New %s") % instance._meta.verbose_name
 
-    if name_field:
-        name = getattr(instance, name_field, None)
-    else:
-        name = "%s" % instance
-
+    name = getattr(instance, name_field, None) if name_field else "%s" % instance
     if name:
         return force_text(name)
 
@@ -237,7 +229,7 @@ class PicotableListView(PicotableViewMixin, ListView):
         if new_button:
             toolbar.append(new_button)
 
-        return_url = self.url_identifier if self.url_identifier else None
+        return_url = self.url_identifier or None
         if self.request.user.is_superuser:
             settings_button = SettingsActionButton.for_model(model, return_url=return_url)
         else:

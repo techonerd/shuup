@@ -63,14 +63,12 @@ class DataImporterRowSession(object):
         for mkey, (model, using) in sorted(six.iteritems(self.deferred_attach)):
             for key, value in six.iteritems(using):
                 setattr(model, key, value)
-            if isinstance(model, TranslatedFieldsModel):
-                # If the model stored in model.master was not saved when
-                # it was set as the master for the model, then it's
-                # possible that model.master_id will be None even though
-                # model.master.id is not.  That causes parler to crash,
-                # so make sure that master_id is set when master.id is.
-                if (not model.master_id) and model.master:
-                    model.master_id = model.master.pk
+            if (
+                isinstance(model, TranslatedFieldsModel)
+                and (not model.master_id)
+                and model.master
+            ):
+                model.master_id = model.master.pk
             model.save()
         self.deferred_attach.clear()
         while self.deferred_calls:

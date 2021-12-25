@@ -183,13 +183,12 @@ class ProductQuerySet(TranslatableQuerySet):
         qs = self._visible(shop=shop, customer=customer, language=language)
         if customer and customer.is_all_seeing:
             return qs
-        else:
-            from ._product_shops import ShopProductVisibility
+        from ._product_shops import ShopProductVisibility
 
-            return qs.filter(
-                shop_products__shop=shop,
-                shop_products__visibility__in=(visibility_type, ShopProductVisibility.ALWAYS_VISIBLE),
-            )
+        return qs.filter(
+            shop_products__shop=shop,
+            shop_products__visibility__in=(visibility_type, ShopProductVisibility.ALWAYS_VISIBLE),
+        )
 
     def listed(self, shop, customer=None, language=None):
         from ._product_shops import ShopProductVisibility
@@ -510,9 +509,12 @@ class Product(TaxableItem, AttributableMixin, TranslatableModel):
         :return: a tuple of prices.
         :rtype: (shuup.core.pricing.Price, shuup.core.pricing.Price)
         """
-        items = []
-        for child in self.variation_children.visible(shop=context.shop, customer=context.customer):
-            items.append(child.get_price_info(context, quantity=quantity))
+        items = [
+            child.get_price_info(context, quantity=quantity)
+            for child in self.variation_children.visible(
+                shop=context.shop, customer=context.customer
+            )
+        ]
 
         if not items:
             return (None, None)
@@ -532,9 +534,12 @@ class Product(TaxableItem, AttributableMixin, TranslatableModel):
         :type context: shuup.core.pricing.PricingContextable
         :rtype: shuup.core.pricing.PriceInfo
         """
-        items = []
-        for child in self.variation_children.visible(shop=context.shop, customer=context.customer):
-            items.append(child.get_price_info(context, quantity=quantity))
+        items = [
+            child.get_price_info(context, quantity=quantity)
+            for child in self.variation_children.visible(
+                shop=context.shop, customer=context.customer
+            )
+        ]
 
         if not items:
             return None
@@ -802,7 +807,13 @@ class Product(TaxableItem, AttributableMixin, TranslatableModel):
             product_id_to_quantity = dict(
                 ProductPackageLink.objects.filter(parent=self).values_list("child_id", "quantity")
             )
-            products = dict((p.pk, p) for p in Product.objects.filter(pk__in=product_id_to_quantity.keys()))
+            products = {
+                p.pk: p
+                for p in Product.objects.filter(
+                    pk__in=product_id_to_quantity.keys()
+                )
+            }
+
             return {products[product_id]: quantity for (product_id, quantity) in six.iteritems(product_id_to_quantity)}
         return {}
 

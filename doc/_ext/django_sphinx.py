@@ -37,9 +37,10 @@ def _process_model_translations(model, lines, latelines):
 
 def _get_translation_models(model):
     for field in model._meta.get_fields():
-        if isinstance(field, models.ManyToOneRel):
-            if issubclass(field.related_model, TranslatedFieldsModel):
-                yield field.related_model
+        if isinstance(field, models.ManyToOneRel) and issubclass(
+            field.related_model, TranslatedFieldsModel
+        ):
+            yield field.related_model
 
 
 def _process_model_field(field, lines, latelines, is_translation=False):
@@ -61,13 +62,7 @@ def _process_field_help_text_and_verbose_name(field, lines, is_translation=0):
 
 
 def _process_field_type(field, lines, latelines):
-    if isinstance(field, models.ForeignKey):
-        to = _resolve_field_destination(field, field.remote_field.model)
-
-        lines.append(
-            ":type %s: %s to :class:`%s.%s`" % (field.attname, type(field).__name__, to.__module__, to.__name__)
-        )
-    elif isinstance(field, models.ManyToManyField):
+    if isinstance(field, (models.ForeignKey, models.ManyToManyField)):
         to = _resolve_field_destination(field, field.remote_field.model)
 
         lines.append(

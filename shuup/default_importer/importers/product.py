@@ -216,7 +216,7 @@ class ProductMetaBase(ImportMetaBase):
             product.primary_image = product_medias.first()
             product.save()
 
-    def handle_stocks(self, fields, sess):  # noqa (C901)
+    def handle_stocks(self, fields, sess):    # noqa (C901)
         """
         Handle stocks for product.
 
@@ -225,13 +225,7 @@ class ProductMetaBase(ImportMetaBase):
         # convert all keys to lowercase
         row = {k.lower(): v for k, v in sess.row.items()}
 
-        # check if row even has these fields we are requiring
-        field_found = False
-        for qty_field in self.aliases["qty"]:
-            if qty_field in row:
-                field_found = True
-                break
-
+        field_found = any(qty_field in row for qty_field in self.aliases["qty"])
         if not field_found:  # no need to process this as qty was not available
             return
 
@@ -254,7 +248,7 @@ class ProductMetaBase(ImportMetaBase):
         qty = None
         for qty_field in self.aliases["qty"]:
             qty_field = qty_field.lower()
-            qty = row.get(qty_field, None)
+            qty = row.get(qty_field)
 
         if not qty:
             return
@@ -363,11 +357,9 @@ class ProductMetaBase(ImportMetaBase):
                 except (TypeError, ValueError):
                     pass
                 value = relmapper.fk_cache.get(str(value))
-                break
             else:
                 value = sess.importer.relation_map_cache.get(field_mapping.get("field")).map_cache[value]
-                break
-
+            break
         if field_mapping.get("is_enum_field"):
             field = field_mapping.get("field")
             for k, v in field.get_choices():
@@ -380,12 +372,11 @@ class ProductMetaBase(ImportMetaBase):
         """
         Get default values for import time.
         """
-        data = {
+        return {
             "type_id": ProductType.objects.values_list("pk", flat=True).first(),
             "tax_class_id": TaxClass.objects.values_list("pk", flat=True).first(),
             "sales_unit_id": SalesUnit.objects.values_list("pk", flat=True).first(),
         }
-        return data
 
 
 class ProductImporter(DataImporter):

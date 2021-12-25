@@ -25,7 +25,7 @@ class NotificationManager(models.Manager):
         """
         :type user: django.contrib.auth.models.AbstractUser
         """
-        if not (user and not is_anonymous(user)):
+        if not user or is_anonymous(user):
             return self.none()
 
         q = Q(recipient_type=RecipientType.SPECIFIC_USER) & Q(recipient=user)

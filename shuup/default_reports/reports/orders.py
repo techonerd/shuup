@@ -31,22 +31,24 @@ class OrdersReport(OrderReportMixin, ShuupReportBase):
     ]
 
     def get_data(self):
-        data = []
         orders = self.get_objects(paid=False)
 
-        for order in orders:
-            data.append(
-                {
-                    "order_num": order.identifier,
-                    "order_date": order.order_date,
-                    "status": order.status,
-                    "order_line_quantity": order.lines.filter(type=OrderLineType.PRODUCT).count(),
-                    "order_total_amount": order.taxful_total_price.amount,
-                    "payment_status": order.get_payment_status_display(),
-                    "shipment_status": order.get_shipping_status_display(),
-                    "customer": order.get_customer_name(),
-                }
-            )
+        data = [
+            {
+                "order_num": order.identifier,
+                "order_date": order.order_date,
+                "status": order.status,
+                "order_line_quantity": order.lines.filter(
+                    type=OrderLineType.PRODUCT
+                ).count(),
+                "order_total_amount": order.taxful_total_price.amount,
+                "payment_status": order.get_payment_status_display(),
+                "shipment_status": order.get_shipping_status_display(),
+                "customer": order.get_customer_name(),
+            }
+            for order in orders
+        ]
+
         return self.get_return_data(data, has_totals=False)
 
 
@@ -68,11 +70,8 @@ class OrderLineReport(OrderLineReportMixin, ShuupReportBase):
     ]
 
     def get_data(self):
-        data = []
         order_lines = self.get_objects()[: self.queryset_row_limit]
-        for line in order_lines:
-            data.append(
-                {
+        data = [{
                     "order_line_sku": line.sku,
                     "order_line_text": line.text,
                     "order_line_quantity": line.quantity,
@@ -81,6 +80,5 @@ class OrderLineReport(OrderLineReportMixin, ShuupReportBase):
                     "taxful_price": line.taxful_price,
                     "type": line.type.name.capitalize(),
                     "created_on": line.created_on,
-                }
-            )
+                } for line in order_lines]
         return self.get_return_data(data, has_totals=False)

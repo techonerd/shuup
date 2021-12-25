@@ -35,7 +35,7 @@ class GDPRView(SaveFormPartsMixin, FormPartsViewMixin, CreateOrUpdateView):
     success_url = reverse_lazy("shuup_admin:gdpr.settings")
 
     def get_toolbar(self):
-        toobar = Toolbar(
+        return Toolbar(
             [
                 PostActionButton(
                     icon="fa fa-check-circle",
@@ -46,7 +46,6 @@ class GDPRView(SaveFormPartsMixin, FormPartsViewMixin, CreateOrUpdateView):
             ],
             view=self,
         )
-        return toobar
 
     def get_queryset(self):
         return GDPRSettings.objects.filter(shop=get_shop(self.request))
@@ -106,7 +105,7 @@ class GDPRAnonymizeView(BaseContactView):
         contact = self.get_object()
         contact.add_log_entry("Info! User anonymization requested.", kind=LogEntryKind.NOTE, user=self.request.user)
         with atomic():
-            user_id = self.request.user.pk if self.request.user.pk else None
+            user_id = self.request.user.pk or None
             run_task(
                 "shuup.gdpr.tasks.anonymize",
                 shop_id=self.request.shop.pk,

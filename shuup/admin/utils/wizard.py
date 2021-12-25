@@ -87,19 +87,14 @@ def setup_blocks_complete(request):
     :return: whether all setup blocks are complete
     :rtype: Boolean
     """
-    for module in get_modules():
-        if (
-            len(
-                [
-                    block
-                    for block in module.get_help_blocks(request=request, kind="setup")
-                    if block.required and not block.done
-                ]
-            )
-            > 0
-        ):
-            return False
-    return True
+    return not any(
+        [
+            block
+            for block in module.get_help_blocks(request=request, kind="setup")
+            if block.required and not block.done
+        ]
+        for module in get_modules()
+    )
 
 
 def onboarding_complete(request):

@@ -93,9 +93,11 @@ class Variable(object):
         self.attributes = attributes
 
     def get_matching_types(self, variable_dict):
-        return set(
-            name for name, variable in six.iteritems(variable_dict) if self.type.is_coercible_from(variable.type)
-        )
+        return {
+            name
+            for name, variable in six.iteritems(variable_dict)
+            if self.type.is_coercible_from(variable.type)
+        }
 
 
 class Binding(Variable):
@@ -205,10 +207,12 @@ class ScriptItem(Base):
             self.verify_bindings()
 
     def verify_bindings(self):
-        unbound = set()
-        for name, binding in six.iteritems(self.bindings):
-            if binding.required and name not in self.data:
-                unbound.add(name)
+        unbound = {
+            name
+            for name, binding in six.iteritems(self.bindings)
+            if binding.required and name not in self.data
+        }
+
         if unbound:
             raise ValueError("Error! Bindings unbound for %r: %r." % (self.identifier, unbound))
 
@@ -235,7 +239,10 @@ class ScriptItem(Base):
         :return: Dict of binding name -> value
         :rtype: dict[name, value]
         """
-        return dict((binding_name, self.get_value(context, binding_name)) for binding_name in self.bindings)
+        return {
+            binding_name: self.get_value(context, binding_name)
+            for binding_name in self.bindings
+        }
 
     @classmethod
     def unserialize(cls, data, validate=True):
@@ -257,14 +264,18 @@ class ScriptItem(Base):
 
     @classmethod
     def get_ui_info_map(cls):
-        map = {}
-        for identifier, object in six.iteritems(get_identifier_to_object_map(cls.provide_category)):
-            map[identifier] = {
+        return {
+            identifier: {
                 "identifier": str(identifier),
                 "name": force_text(object.name),
-                "description": force_text(getattr(object, "description", None) or ""),
+                "description": force_text(
+                    getattr(object, "description", None) or ""
+                ),
             }
-        return map
+            for identifier, object in six.iteritems(
+                get_identifier_to_object_map(cls.provide_category)
+            )
+        }
 
 
 class Condition(ScriptItem):

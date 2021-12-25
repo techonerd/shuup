@@ -40,9 +40,7 @@ def get_cached_value(identifier, item, context, **kwargs):
     :return: Cache key and cached value if allowed
     :rtype: tuple(str, object)
     """
-    allow_cache = True
-    if "allow_cache" in kwargs:
-        allow_cache = kwargs.pop("allow_cache")
+    allow_cache = kwargs.pop("allow_cache") if "allow_cache" in kwargs else True
     key = get_cache_key_for_context(identifier, item, context, **kwargs)
     if allow_cache is False:
         return key, None
@@ -97,11 +95,20 @@ def bump_cache_for_shop_product(instance, shop=None):
     # All above querysets should in theory be lazy and executed once
     # here
     product_ids_to_bump = Product.objects.filter(
-        Q(id__in=product_ids)
-        | Q(variation_parent_id__in=product_ids)
-        | Q(variation_parent_id__in=variation_parent_ids)
-        | Q(id__in=set(value for pair_of_values in package_product_ids for value in pair_of_values))
+        (
+            Q(id__in=product_ids)
+            | Q(variation_parent_id__in=product_ids)
+            | Q(variation_parent_id__in=variation_parent_ids)
+            | Q(
+                id__in={
+                    value
+                    for pair_of_values in package_product_ids
+                    for value in pair_of_values
+                }
+            )
+        )
     ).values_list("id", flat=True)
+
 
     # One extra query should be better what we have now
     shop_product_ids_to_bump = ShopProduct.objects.filter(product_id__in=product_ids_to_bump).values_list(
@@ -294,7 +301,7 @@ def _get_val(v):
         return hashlib.sha1(str(frozenset(sorted_items.items())).encode("utf-8")).hexdigest()
     if hasattr(v, "pk"):
         return v.pk
-    if isinstance(v, QuerySet) or isinstance(v, TranslatableQuerySet):
+    if isinstance(v, (QuerySet, TranslatableQuerySet)):
         return "|".join(list(map(str, v.all().values_list("pk", flat=True))))
     if isinstance(v, list):
         return "|".join(list(map(str, v)))

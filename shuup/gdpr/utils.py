@@ -49,9 +49,7 @@ def get_all_contact_data(shop, contact):
         if not isinstance(gdpr_user_data_provider, GDPRBaseUserDataProvider):
             continue
 
-        user = None
-        if isinstance(contact, PersonContact):
-            user = contact.user
+        user = contact.user if isinstance(contact, PersonContact) else None
         for key, data in gdpr_user_data_provider.get_user_data(shop=shop, contact=contact, user=user):
             user_data[key] = data
 

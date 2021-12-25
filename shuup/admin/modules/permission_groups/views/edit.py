@@ -77,11 +77,12 @@ class PermissionGroupForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super(PermissionGroupForm, self).clean()
-        permissions = set()
+        permissions = {
+            field.split("perm:")[-1]
+            for field, value in cleaned_data.items()
+            if field.startswith("perm:") and value
+        }
 
-        for field, value in cleaned_data.items():
-            if field.startswith("perm:") and value:
-                permissions.add(field.split("perm:")[-1])
 
         cleaned_data["permissions"] = permissions
         return cleaned_data

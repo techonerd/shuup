@@ -41,10 +41,7 @@ class ContactEditView(SaveFormPartsMixin, FormPartsViewMixin, CreateOrUpdateView
     def get_contact_type(self):
         contact_type = self.request.GET.get("type", "")
         if self.object.pk:
-            if type(self.object) is PersonContact:
-                contact_type = "person"
-            else:
-                contact_type = "company"
+            contact_type = "person" if type(self.object) is PersonContact else "company"
         return contact_type
 
     def get_queryset(self):

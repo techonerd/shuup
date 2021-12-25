@@ -225,14 +225,11 @@ class GenericDocstringValidator(Validator):
             sep = ".\n" if "\n" in docstring else "."
             if sep not in docstring:
                 yield "Error! Docstring doesn't seem to have an opening sentence."
-        else:
-            if not self.can_elide_docstring(docinfo):
-                yield "Error! Docstring is missing."
+        elif not self.can_elide_docstring(docinfo):
+            yield "Error! Docstring is missing."
 
     def can_elide_docstring(self, docinfo):
-        if docinfo.name == "__init__" and not docinfo.required_args:
-            return True
-        return False
+        return docinfo.name == "__init__" and not docinfo.required_args
 
 
 class ArgValidator(Validator):
@@ -255,9 +252,12 @@ class ReturnValidator(Validator):
             return
         rvv = ReturnValueVisitor()
         rvv.visit(node)
-        if rvv.has_valueful_return:
-            if not (":return" in docstring or ":rtype" in docstring):
-                yield u"Error! Undocumented return value(s)"
+        if (
+            rvv.has_valueful_return
+            and ":return" not in docstring
+            and ":rtype" not in docstring
+        ):
+            yield u"Error! Undocumented return value(s)"
 
 
 class DocInfo(object):
@@ -276,7 +276,10 @@ class DocInfo(object):
         if self.named_args and self.named_args[0] in IGNORED_FIRST_ARGS:
             self.named_args.pop(0)
 
-        self.required_args = set(arg for arg in self.named_args if arg not in IGNORED_ARGS)
+        self.required_args = {
+            arg for arg in self.named_args if arg not in IGNORED_ARGS
+        }
+
         self.mentioned_args = set(self.parse_arg_mentions(self.docstring))
         self.missing_args = self.required_args - self.mentioned_args
         self.extraneous_args = self.mentioned_args - self.required_args - set(["args", "kwargs"])
@@ -300,19 +303,20 @@ class DocInfo(object):
             validator = validator_class()
             if any((directive in self.directives) for directive in validator_class.disabling_directives):
                 continue
-            for error in validator.validate(self):
-                yield error
+            yield from validator.validate(self)
 
     @staticmethod
     def parse_docstring(node):
-        if node.body and isinstance(node.body[0], ast.Expr):
-            if isinstance(node.body[0].value, ast.Str):
-                value = node.body[0].value.s
-                return value
+        if (
+            node.body
+            and isinstance(node.body[0], ast.Expr)
+            and isinstance(node.body[0].value, ast.Str)
+        ):
+            return node.body[0].value.s
 
     @staticmethod
     def parse_arg_mentions(docstring):
-        return set(m.group(1) for m in ARG_RE.finditer(docstring))
+        return {m.group(1) for m in ARG_RE.finditer(docstring)}
 
 
 class DocStringVisitor(ast.NodeVisitor):
@@ -386,7 +390,7 @@ class DocCov(object):
         grand_totals = Counter()
         for path, objects in sorted(self.objects_by_file.items()):
             clean_path = path[len(common_prefix) :].replace(os.sep, "/")
-            n_documented = sum([1 for m in objects.values() if m and m.valid])
+            n_documented = sum(bool(m and m.valid) for m in objects.values())
             n_total = float(len(objects))
             n_undocumented = n_total - n_documented
 

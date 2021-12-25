@@ -229,8 +229,8 @@ class TextFilter(Filter):
         if value:
             value = force_text(value).strip()
             field = self.get_filter_field(column, context)
-            if value:
-                return queryset.filter(**{"%s__%s" % (field, self.operator): value})
+        if value:
+            return queryset.filter(**{"%s__%s" % (field, self.operator): value})
         return queryset
 
 
@@ -285,7 +285,7 @@ class Column(object):
             "allowHighlight": bool(self.allow_highlight),
             "raw": bool(self.raw),
         }
-        return dict((key, value) for (key, value) in six.iteritems(out) if value is not None)
+        return {key: value for (key, value) in six.iteritems(out) if value is not None}
 
     def get_sort_field(self, sort_field):
         if self.sort_field:
@@ -380,7 +380,7 @@ class Picotable(object):
         self.mass_actions = mass_actions
         self.queryset = queryset
         self.context = context
-        self.columns_by_id = dict((c.id, c) for c in self.columns)
+        self.columns_by_id = {c.id: c for c in self.columns}
         self.get_object_url = maybe_callable("get_object_url", context=self.context)
         self.get_object_abstract = maybe_callable("get_object_abstract", context=self.context)
         self.get_object_extra = maybe_callable("get_object_extra", context=self.context)
@@ -430,7 +430,7 @@ class Picotable(object):
             page = paginator.page(int(query["page"]))
         except EmptyPage:
             page = paginator.page(paginator.num_pages)
-        out = {
+        return {
             "columns": [c.to_json(context=self.context) for c in self.columns],
             "pagination": {
                 "perPage": paginator.per_page,
@@ -440,14 +440,15 @@ class Picotable(object):
             },
             "massActions": self.mass_actions,
             "items": [self.process_item(item) for item in page],
-            "itemInfo": _("Showing %(per_page)s of %(n_items)s %(verbose_name_plural)s")
+            "itemInfo": _(
+                "Showing %(per_page)s of %(n_items)s %(verbose_name_plural)s"
+            )
             % {
                 "per_page": min(paginator.per_page, paginator.count),
                 "n_items": paginator.count,
                 "verbose_name_plural": self.get_verbose_name_plural(),
             },
         }
-        return out
 
     def process_item(self, object):
         object_url = self.get_object_url(object) if callable(self.get_object_url) else None
@@ -455,9 +456,10 @@ class Picotable(object):
         out = {
             "_id": object.id,
             "_url": object_url,
-            "_linked_in_mobile": True if object_url else False,
+            "_linked_in_mobile": bool(object_url),
             "_extra": object_extra,
         }
+
         for column in self.columns:
             out[column.id] = column.get_display_value(context=self.context, object=object)
 

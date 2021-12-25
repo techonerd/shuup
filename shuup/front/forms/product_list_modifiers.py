@@ -41,9 +41,7 @@ class FilterWidget(forms.SelectMultiple):
     def render(self, name, value, attrs=None, choices=(), renderer=None):
         if value is None:
             value = []
-        choices_to_render = []
-        for option_value, option_label in chain(self.choices, choices):
-            choices_to_render.append((option_value, option_label))
+        choices_to_render = list(chain(self.choices, choices))
         return mark_safe(
             render_to_string(
                 "shuup/front/product/filter_choice.jinja",
@@ -56,10 +54,7 @@ class OneChoiceFilterWidget(forms.Select):
     def render(self, name, value, attrs=None, choices=(), renderer=None):
         if value is None:
             value = []
-        choices_to_render = []
-        for option_value, option_label in chain(self.choices, choices):
-            choices_to_render.append((option_value, option_label))
-
+        choices_to_render = list(chain(self.choices, choices))
         return mark_safe(
             render_to_string(
                 "shuup/front/product/filter_choice.jinja",
@@ -467,21 +462,23 @@ class ProductVariationFilter(SimpleProductListModifier):
                 choices = (value.value.replace(" ", "*"), value.value)
                 variation_values[slugify(variation.name)].add(choices)
 
-        fields = []
-        for variation_key, choices in six.iteritems(variation_values):
-            fields.append(
-                (
-                    "variation_%s" % variation_key,
-                    CommaSeparatedListField(
-                        required=False, label=capfirst(variation_key), widget=FilterWidget(choices=choices)
-                    ),
-                )
+        fields = [
+            (
+                "variation_%s" % variation_key,
+                CommaSeparatedListField(
+                    required=False,
+                    label=capfirst(variation_key),
+                    widget=FilterWidget(choices=choices),
+                ),
             )
+            for variation_key, choices in six.iteritems(variation_values)
+        ]
+
         context_cache.set_cached_value(key, fields)
         return fields
 
     def get_queryset(self, queryset, data):
-        if not any([key for key in data.keys() if key.startswith("variation")]):
+        if not any(key for key in data.keys() if key.startswith("variation")):
             return
 
         for key, values in six.iteritems(data):
@@ -601,23 +598,24 @@ class AttributeProductListFilter(SimpleProductListModifier):
         self,
         attributes,
     ):
-        fields = []
-        for attribute in attributes:
-            if attribute.type == AttributeType.CHOICES and attribute.choices.exists():
-                fields.append(
-                    [
-                        attribute.identifier,
-                        CommaSeparatedListField(
-                            required=False,
-                            widget=FilterWidget(
-                                choices=[(choice.id, choice.name) for choice in attribute.choices.all()],
-                            ),
-                            label=_(attribute.name),
-                        ),
-                    ]
-                )
-
-        return fields
+        return [
+            [
+                attribute.identifier,
+                CommaSeparatedListField(
+                    required=False,
+                    widget=FilterWidget(
+                        choices=[
+                            (choice.id, choice.name)
+                            for choice in attribute.choices.all()
+                        ],
+                    ),
+                    label=_(attribute.name),
+                ),
+            ]
+            for attribute in attributes
+            if attribute.type == AttributeType.CHOICES
+            and attribute.choices.exists()
+        ]
 
     def _get_attributes_from_shop_config(self, shop):
         config = get_configuration(shop)
@@ -659,9 +657,11 @@ class AttributeProductListFilter(SimpleProductListModifier):
         """
         attribute_identifiers = Attribute.objects.all().values_list("identifier", flat=True)
 
-        attribute_query_strings = [key for key, value in data.items() if value and key in attribute_identifiers]
-
-        return attribute_query_strings
+        return [
+            key
+            for key, value in data.items()
+            if value and key in attribute_identifiers
+        ]
 
     def get_queryset(self, queryset, data):
         # Filter for chosen attributes

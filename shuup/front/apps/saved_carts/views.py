@@ -43,10 +43,7 @@ class CartDetailView(DashboardViewMixin, CartViewMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super(CartDetailView, self).get_context_data(**kwargs)
         lines = []
-        product_dict = {}
-        for product in self.object.products.all():
-            product_dict[product.id] = product
-
+        product_dict = {product.id: product for product in self.object.products.all()}
         for line in self.object.data.get("lines", []):
             if line.get("type", None) != OrderLineType.PRODUCT:
                 continue
@@ -94,11 +91,13 @@ class CartAddAllProductsView(CartViewMixin, SingleObjectMixin, View):
         return get_object_or_404(self.get_queryset(), pk=self.kwargs.get("pk"))
 
     def _get_supplier(self, shop_product, supplier_id, customer, quantity, shipping_address):
-        if supplier_id:
-            supplier = shop_product.suppliers.enabled(shop=shop_product.shop).filter(pk=supplier_id).first()
-        else:
-            supplier = shop_product.get_supplier(customer, quantity, shipping_address)
-        return supplier
+        return (
+            shop_product.suppliers.enabled(shop=shop_product.shop)
+            .filter(pk=supplier_id)
+            .first()
+            if supplier_id
+            else shop_product.get_supplier(customer, quantity, shipping_address)
+        )
 
     @atomic
     def post(self, request, *args, **kwargs):

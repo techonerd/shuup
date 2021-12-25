@@ -122,8 +122,8 @@ class MethodsPhase(CheckoutPhaseViewMixin, FormView):
         shipping_method = ShippingMethod.objects.filter(pk=self.storage.get("shipping_method_id")).first()
         payment_method = PaymentMethod.objects.filter(pk=self.storage.get("payment_method_id")).first()
 
-        self.basket.shipping_method = shipping_method if shipping_method else None
-        self.basket.payment_method = payment_method if payment_method else None
+        self.basket.shipping_method = shipping_method or None
+        self.basket.payment_method = payment_method or None
 
         # force recalculate lines
         self.basket.uncache()

@@ -49,9 +49,11 @@ class MutableAddressForm(forms.ModelForm):
                 setattr(self.fields[field], prop, properties[prop])
 
     def save(self, commit=True):
-        if self.instance.pk:
-            if isinstance(self.instance, ImmutableAddress) or _is_assigned_multiple_times(self.instance):
-                self.instance.pk = None  # Force resave
+        if self.instance.pk and (
+            isinstance(self.instance, ImmutableAddress)
+            or _is_assigned_multiple_times(self.instance)
+        ):
+            self.instance.pk = None  # Force resave
         return super(MutableAddressForm, self).save(commit)
 
 

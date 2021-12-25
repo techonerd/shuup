@@ -66,7 +66,7 @@ def is_in_grace_period():
     """
     get_installation_key()  # Need to initialize here
     installation_time = PersistentCacheEntry.objects.get(**INSTALLATION_KEY_KWARGS).time
-    return (now() - installation_time).total_seconds() < 60 * 60 * 24
+    return (now() - installation_time).total_seconds() < 60**2 * 24
 
 
 def is_telemetry_enabled():
@@ -127,9 +127,7 @@ def daterange(start_date, end_date):
 
 
 def get_daily_data_for_day(date):
-    data = {"date": date.strftime("%Y-%m-%d")}
-    data["methods"] = {}
-
+    data = {'date': date.strftime("%Y-%m-%d"), 'methods': {}}
     today_min = datetime.combine(date, time.min)
     today_max = datetime.combine(date, time.max)
     order_date_filter = Q(order_date__range=(today_min, today_max))

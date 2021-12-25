@@ -33,10 +33,11 @@ class SalesPerHour(OrderReportMixin, ShuupReportBase):
     def get_data(self, **kwargs):
         orders = self.get_objects()
         groups = itertools.groupby(orders, lambda x: self.date_hour(x.order_date))
-        data = []
-        hour_data = {}
-        for base_hour in range(0, 24):
-            hour_data[base_hour] = {"hour": base_hour, "order_amount": 0, "total_sales": 0}
+        hour_data = {
+            base_hour: {"hour": base_hour, "order_amount": 0, "total_sales": 0}
+            for base_hour in range(24)
+        }
+
         for hour, matches in groups:
             total = 0
             amount = 0
@@ -48,7 +49,5 @@ class SalesPerHour(OrderReportMixin, ShuupReportBase):
             hour_data[hour]["order_amount"] = amount
             hour_data[hour]["total_sales"] = self.shop.create_price(total)
 
-        for hour, hourly_data in sorted(six.iteritems(hour_data)):
-            data.append(hourly_data)
-
+        data = [hourly_data for hour, hourly_data in sorted(six.iteritems(hour_data))]
         return self.get_return_data(data, has_totals=False)

@@ -99,9 +99,7 @@ class CompanyContactForm(forms.ModelForm):
         company = CompanyContact.objects.filter(tax_number=tax_number).first()
         if company:
             error_message = _("Given Tax Number already exists. Please contact support.")
-            if not self.instance.pk:
-                raise ValidationError(error_message, code="existing_tax_number")
-            elif company.pk != self.instance.pk:
+            if not self.instance.pk or company.pk != self.instance.pk:
                 raise ValidationError(error_message, code="existing_tax_number")
         return tax_number
 

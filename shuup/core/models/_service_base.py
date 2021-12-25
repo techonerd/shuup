@@ -296,8 +296,7 @@ class Service(TranslatableShuupModel):
             yield ValidationError(_("%s is for different shop.") % self, code="wrong_shop")
 
         for component in self.behavior_components.all():
-            for reason in component.get_unavailability_reasons(self, source):
-                yield reason
+            yield from component.get_unavailability_reasons(self, source)
 
     def get_total_cost(self, source: "OrderSource") -> PriceInfo:
         """
@@ -313,8 +312,7 @@ class Service(TranslatableShuupModel):
         :return: description, price and tax class of the costs.
         """
         for component in self.behavior_components.all():
-            for cost in component.get_costs(self, source):
-                yield cost
+            yield from component.get_costs(self, source)
 
     def get_lines(self, source):
         """

@@ -63,12 +63,14 @@ class EditProductToolbar(Toolbar):
             icon="fa fa-random",
             url=reverse("shuup_admin:shop_product.edit_cross_sell", kwargs={"pk": product.pk}),
         )
-        menu_items = [
-            menu_item
-            for menu_item in self._get_header_items(
-                header=_("Cross-Selling"), divider=False, identifier=ProductActionCategory.CHILD_CROSS_SELL
+        menu_items = list(
+            self._get_header_items(
+                header=_("Cross-Selling"),
+                divider=False,
+                identifier=ProductActionCategory.CHILD_CROSS_SELL,
             )
-        ]
+        )
+
         menu_items.append(cross_sell_button)
 
         # packages
@@ -77,11 +79,12 @@ class EditProductToolbar(Toolbar):
 
         provided_items = get_provide_objects("admin_product_toolbar_action_item")
         if provided_items:
-            other_menu = []
+            other_menu = [
+                button(product)
+                for button in provided_items
+                if button.visible_for_object(product)
+            ]
 
-            for button in provided_items:
-                if button.visible_for_object(product):
-                    other_menu.append(button(product))
 
             if other_menu:
                 for item in self._get_header_items(header=_("Other"), identifier=ProductActionCategory.CHILD_OTHER):
@@ -130,8 +133,9 @@ class EditProductToolbar(Toolbar):
             )
 
     def _get_package_menu_items(self, product):
-        for item in self._get_header_items(_("Packages"), identifier=ProductActionCategory.CHILD_PACKAGE):
-            yield item
+        yield from self._get_header_items(
+            _("Packages"), identifier=ProductActionCategory.CHILD_PACKAGE
+        )
 
         if product.is_package_parent():
             yield DropdownItem(
@@ -140,25 +144,29 @@ class EditProductToolbar(Toolbar):
                 url=self._get_package_url(product),
             )
 
-            for child in self._get_children_items(product.get_all_package_children()):
-                yield child
+            yield from self._get_children_items(product.get_all_package_children())
         elif product.is_package_child():
             for parent in product.get_all_package_parents():
-                for item in self._get_parent_and_sibling_items(
-                    parent, [sib for sib in parent.get_all_package_children() if sib != product]
-                ):
-                    yield item
+                yield from self._get_parent_and_sibling_items(
+                    parent,
+                    [
+                        sib
+                        for sib in parent.get_all_package_children()
+                        if sib != product
+                    ],
+                )
 
     def _get_variation_and_package_menu_items(self, product):
         is_package_product = product.is_container() or product.is_package_child()
         if is_package_product:
-            for item in self._get_package_menu_items(product):
-                yield item
-
+            yield from self._get_package_menu_items(product)
         if not is_package_product:
             # package header
-            for item in self._get_header_items(_("Packages"), identifier=ProductActionCategory.CHILD_PACKAGE):
-                yield item
+            # package header
+            yield from self._get_header_items(
+                _("Packages"), identifier=ProductActionCategory.CHILD_PACKAGE
+            )
+
             yield DropdownItem(
                 text=_("Convert to Package Parent"),
                 icon="fa fa-retweet",

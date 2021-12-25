@@ -30,9 +30,9 @@ from shuup.utils.translation import cache_translations_for_tree
 
 
 def get_login_form(request, id_prefix="quick-login"):
-    # Getting the form from the Login view
-    form = cached_load("SHUUP_LOGIN_VIEW")(request=request).get_form(id_prefix=id_prefix)
-    return form
+    return cached_load("SHUUP_LOGIN_VIEW")(request=request).get_form(
+        id_prefix=id_prefix
+    )
 
 
 def _group_list_items(group_list, number):

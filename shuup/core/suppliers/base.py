@@ -35,7 +35,10 @@ def get_supported_product_kinds_for_module(module_identifier: str) -> Iterable[P
 
 @lru_cache()
 def get_supported_product_kinds_values_for_module(module_identifier: str) -> Iterable[int]:
-    return list([spec.value for spec in get_supported_product_kinds_for_module(module_identifier)])
+    return [
+        spec.value
+        for spec in get_supported_product_kinds_for_module(module_identifier)
+    ]
 
 
 class SupplierModuleInterface:

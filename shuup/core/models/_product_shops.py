@@ -296,17 +296,19 @@ class ShopProduct(MoneyPropped, TranslatableModel):
     def clean(self):
         pre_clean.send(type(self), instance=self)
         super(ShopProduct, self).clean()
-        if self.display_unit:
-            if self.display_unit.internal_unit != self.product.sales_unit:
-                raise ValidationError(
-                    {
-                        "display_unit": _(
-                            "Error! Invalid display unit: Internal unit of "
-                            "the selected display unit does not match "
-                            "with the sales unit of the product."
-                        )
-                    }
-                )
+        if (
+            self.display_unit
+            and self.display_unit.internal_unit != self.product.sales_unit
+        ):
+            raise ValidationError(
+                {
+                    "display_unit": _(
+                        "Error! Invalid display unit: Internal unit of "
+                        "the selected display unit does not match "
+                        "with the sales unit of the product."
+                    )
+                }
+            )
         post_clean.send(type(self), instance=self)
 
     def is_list_visible(self):
@@ -341,7 +343,7 @@ class ShopProduct(MoneyPropped, TranslatableModel):
 
     @property
     def visible(self):
-        return not (self.visibility == ShopProductVisibility.NOT_VISIBLE)
+        return self.visibility != ShopProductVisibility.NOT_VISIBLE
 
     @property
     def public_primary_image(self):
@@ -380,8 +382,7 @@ class ShopProduct(MoneyPropped, TranslatableModel):
                 )
 
         for receiver, response in get_visibility_errors.send(ShopProduct, shop_product=self, customer=customer):
-            for error in response:
-                yield error
+            yield from response
 
     def get_orderability_errors(self, supplier, quantity, customer, ignore_minimum=False):
         """
@@ -399,11 +400,10 @@ class ShopProduct(MoneyPropped, TranslatableModel):
         :type ignore_minimum: bool
         :return: Iterable[ValidationError]
         """
-        for error in self.get_visibility_errors(customer):
-            yield error
-
-        for error in self.get_purchasability_errors(supplier, customer, quantity, ignore_minimum):
-            yield error
+        yield from self.get_visibility_errors(customer)
+        yield from self.get_purchasability_errors(
+            supplier, customer, quantity, ignore_minimum
+        )
 
     def get_purchasability_errors(self, supplier, customer, quantity, ignore_minimum=False):
         """
@@ -425,17 +425,15 @@ class ShopProduct(MoneyPropped, TranslatableModel):
         if not self.purchasable:
             yield ValidationError(_("The product is not purchasable."), code="not_purchasable")
 
-        for error in self.get_quantity_errors(quantity, ignore_minimum):
-            yield error
-
-        for error in self.get_supplier_errors(supplier, customer, quantity, ignore_minimum):
-            yield error
+        yield from self.get_quantity_errors(quantity, ignore_minimum)
+        yield from self.get_supplier_errors(
+            supplier, customer, quantity, ignore_minimum
+        )
 
         for receiver, response in get_orderability_errors.send(
             ShopProduct, shop_product=self, customer=customer, supplier=supplier, quantity=quantity
         ):
-            for error in response:
-                yield error
+            yield from response
 
     def get_quantity_errors(self, quantity, ignore_minimum):
         if not ignore_minimum and quantity < self.minimum_purchase_quantity:
@@ -487,8 +485,7 @@ class ShopProduct(MoneyPropped, TranslatableModel):
         elif supplier:  # Test supplier orderability only for variation children and normal products
             errors = supplier.get_orderability_errors(self, quantity, customer=customer)
 
-        for error in errors:
-            yield error
+        yield from errors
 
     def get_orderability_errors_for_simple_variation_parent(self, supplier, customer):
         sellable = False

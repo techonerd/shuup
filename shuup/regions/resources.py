@@ -18,12 +18,14 @@ def add_init_fields_resource(context, country_code_field, region_code_field, reg
         context,
         placement,
         InlineScriptResource(
-            INITIALIZE_FIELDS_FUNCTION
-            % {
-                "country_code_field": country_code_field,
-                "region_code_field": region_code_field,
-                "region_field": region_field if region_field else "",
-            }
+            (
+                INITIALIZE_FIELDS_FUNCTION
+                % {
+                    "country_code_field": country_code_field,
+                    "region_code_field": region_code_field,
+                    "region_field": region_field or "",
+                }
+            )
         ),
     )
 

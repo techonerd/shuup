@@ -32,9 +32,12 @@ def backwards_func(apps, schema_editor):
     gdpr_user_consent_model = apps.get_model("shuup_gdpr", "GDPRUserConsent")
 
     for consent in gdpr_user_consent_model.objects.all():
-        page_ids = set()
-        for consent_document in consent.consents.values_list("id", flat=True):
-            page_ids.add(consent_document.page.id)
+        page_ids = {
+            consent_document.page.id
+            for consent_document in consent.consents.values_list(
+                "id", flat=True
+            )
+        }
 
         consent.documents = page_ids
 

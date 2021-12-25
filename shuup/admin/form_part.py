@@ -46,10 +46,9 @@ class FormPartsViewMixin(object):
         return None  # Dealt with by `get_form`; this will just squelch Django warnings
 
     def get_form_part_classes(self):
-        form_part_classes = list(self.base_form_part_classes) + list(
+        return list(self.base_form_part_classes) + list(
             get_provide_objects(self.form_part_class_provide_key)
         )
-        return form_part_classes
 
     def get_form_parts(self, object):
         form_part_classes = self.get_form_part_classes()

@@ -140,13 +140,12 @@ class UserChangePermissionsView(UpdateView):
         return get_user_model().objects.all()
 
     def get_toolbar(self):
-        toolbar = get_default_edit_toolbar(
+        return get_default_edit_toolbar(
             self,
             "permissions_form",
             discard_url=get_model_url(self.object),
             with_split_save=False,
         )
-        return toolbar
 
     def get_form_kwargs(self):
         kwargs = super(UserChangePermissionsView, self).get_form_kwargs()

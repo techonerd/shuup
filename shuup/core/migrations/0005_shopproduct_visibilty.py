@@ -16,7 +16,7 @@ def shop_product_visibility(apps, schema_editor):
             visibility = ShopProductVisibility.NOT_VISIBLE
         elif listed and not searchable:
             visibility = ShopProductVisibility.LISTED
-        elif searchable and not listed:
+        elif not listed:
             visibility = ShopProductVisibility.SEARCHABLE
         else:
             visibility = ShopProductVisibility.ALWAYS_VISIBLE

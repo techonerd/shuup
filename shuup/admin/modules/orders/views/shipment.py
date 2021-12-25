@@ -78,9 +78,9 @@ class OrderCreateShipmentView(ModifiableViewMixin, UpdateView):
 
         form.product_summary = order.get_product_summary(supplier=supplier_id)
         form.product_names = dict(
-            (product_id, text)
-            for (product_id, text) in order.lines.exclude(product=None).values_list("product_id", "text")
+            order.lines.exclude(product=None).values_list("product_id", "text")
         )
+
         for product_id, info in sorted(six.iteritems(form.product_summary)):
             product_name = _("%(product_name)s (%(supplier)s)") % {
                 "product_name": form.product_names.get(product_id, "Product %s" % product_id),
@@ -133,17 +133,20 @@ class OrderCreateShipmentView(ModifiableViewMixin, UpdateView):
         return get_model_url(self.object)
 
     def form_valid(self, form):
-        product_ids_to_quantities = dict(
-            (int(key.replace("q_", "")), value)
+        product_ids_to_quantities = {
+            int(key.replace("q_", "")): value
             for (key, value) in six.iteritems(form.cleaned_data)
             if key.startswith("q_") and (value > 0 if value else False)
-        )
+        }
+
         order = self.object
 
         product_map = Product.objects.in_bulk(set(product_ids_to_quantities.keys()))
-        products_to_quantities = dict(
-            (product_map[product_id], quantity) for (product_id, quantity) in six.iteritems(product_ids_to_quantities)
-        )
+        products_to_quantities = {
+            product_map[product_id]: quantity
+            for (product_id, quantity) in six.iteritems(product_ids_to_quantities)
+        }
+
 
         unsaved_shipment = Shipment(
             order=order,
@@ -242,7 +245,7 @@ class ShipmentListView(PicotableListView):
     def get_order(self, instance):
         try:
             order_url = get_model_url(instance.order)
-            return f'<a href="{order_url}">{str(instance.order)}</a>'
+            return f'<a href="{order_url}">{instance.order}</a>'
         except NoModelUrl:
             return str(instance.order)
 
@@ -259,19 +262,22 @@ class ShipmentListView(PicotableListView):
         return ", ".join(content)
 
     def create_action_buttons(self, instance):
-        if instance.order.shipping_method and instance.order.shipping_method.carrier.uses_default_shipments_manager:
-            if instance.status not in (ShipmentStatus.SENT, ShipmentStatus.ERROR):
-                url = "{base_url}?next={next_url}".format(
-                    base_url=reverse("shuup_admin:order.set-shipment-sent", kwargs={"pk": instance.pk}),
-                    next_url=reverse("shuup_admin:order.shipments.list"),
-                )
-                return render_to_string(
-                    "shuup/admin/orders/_set_shipments_status_button.jinja",
-                    {
-                        "shipment_id": instance.pk,
-                        "url": url,
-                    },
-                )
+        if (
+            instance.order.shipping_method
+            and instance.order.shipping_method.carrier.uses_default_shipments_manager
+            and instance.status not in (ShipmentStatus.SENT, ShipmentStatus.ERROR)
+        ):
+            url = "{base_url}?next={next_url}".format(
+                base_url=reverse("shuup_admin:order.set-shipment-sent", kwargs={"pk": instance.pk}),
+                next_url=reverse("shuup_admin:order.shipments.list"),
+            )
+            return render_to_string(
+                "shuup/admin/orders/_set_shipments_status_button.jinja",
+                {
+                    "shipment_id": instance.pk,
+                    "url": url,
+                },
+            )
         return instance.status.label
 
     def __init__(self):

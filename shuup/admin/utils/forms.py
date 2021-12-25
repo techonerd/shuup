@@ -56,10 +56,7 @@ def add_form_errors_as_messages(request, form):
     """
     n_messages = 0
     for field_name, errors in form.errors.items():
-        if field_name != NON_FIELD_ERRORS:
-            field_label = form[field_name].label
-        else:
-            field_label = ""
+        field_label = form[field_name].label if field_name != NON_FIELD_ERRORS else ""
         for error in errors:
             messages.error(request, "%s %s" % (field_label, error))
             n_messages += 1
@@ -67,7 +64,7 @@ def add_form_errors_as_messages(request, form):
 
 
 def flatatt_filter(attrs):
-    attrs = dict((key, value) for (key, value) in six.iteritems(attrs) if key and value)
+    attrs = {key: value for (key, value) in six.iteritems(attrs) if key and value}
     return flatatt(attrs)
 
 

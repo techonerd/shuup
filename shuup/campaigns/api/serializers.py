@@ -17,7 +17,7 @@ class HourConditionSerializer(serializers.ModelSerializer):
         fields = ("id", "hour_start", "hour_end", "days")
 
     def get_days(self, condition):
-        return [v for v in map(int, condition.days.split(","))]
+        return list(map(int, condition.days.split(",")))
 
 
 class HourBasketConditionSerializer(serializers.ModelSerializer):
@@ -28,4 +28,4 @@ class HourBasketConditionSerializer(serializers.ModelSerializer):
         fields = ("id", "hour_start", "hour_end", "days")
 
     def get_days(self, condition):
-        return [v for v in map(int, condition.days.split(","))]
+        return list(map(int, condition.days.split(",")))

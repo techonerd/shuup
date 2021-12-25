@@ -636,7 +636,7 @@ def get_person_contact(user):
     :return: PersonContact of the user or AnonymousContact
     :rtype: PersonContact|AnonymousContact
     """
-    if not (user and not is_anonymous(user)):
+    if not user or is_anonymous(user):
         return AnonymousContact()
 
     defaults = {

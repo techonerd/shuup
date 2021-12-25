@@ -57,8 +57,10 @@ class ModuleInterface(object):
 
         :rtype: dict[str, str]
         """
-        identifier_to_spec = {}
-        for spec, module in six.iteritems(get_provide_specs_and_objects(cls.module_provides_key)):
-            if module.identifier:
-                identifier_to_spec[module.identifier] = spec
-        return identifier_to_spec
+        return {
+            module.identifier: spec
+            for spec, module in six.iteritems(
+                get_provide_specs_and_objects(cls.module_provides_key)
+            )
+            if module.identifier
+        }

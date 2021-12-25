@@ -105,10 +105,9 @@ class DashboardChartBlock(DashboardBlock):
         chart = self.get_chart()
         if not chart:
             return None
-        content = self.BLOCK_TEMPLATE % {
+        return self.BLOCK_TEMPLATE % {
             "title": force_text(chart.title),
             "id": self.id,
             "config": chart.get_config_json(),
             "icon": "fa-line-chart",
         }
-        return content

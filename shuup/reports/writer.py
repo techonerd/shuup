@@ -99,11 +99,11 @@ class ReportWriter(object):
         """
         self.inline = inline
         rendered_output = self._render_report(report)
-        if self.writer_type == "html":
-            output = mark_safe(rendered_output)
-        else:
-            output = mark_safe("<pre>%s</pre>" % escape(rendered_output))
-        return output
+        return (
+            mark_safe(rendered_output)
+            if self.writer_type == "html"
+            else mark_safe("<pre>%s</pre>" % escape(rendered_output))
+        )
 
     def get_response(self, report):
         """
@@ -338,11 +338,7 @@ table, th, td {
         styles = self.styles
         extrahead = self.extra_header or ""
 
-        if self.inline:
-            template = self.INLINE_TEMPLATE
-        else:
-            template = self.TEMPLATE
-
+        template = self.INLINE_TEMPLATE if self.inline else self.TEMPLATE
         html = template % {"title": self.title, "body": body, "style": styles, "extrahead": extrahead}
         if not self.inline:
             html = html.encode("UTF-8")
@@ -385,13 +381,14 @@ class JSONReportWriter(ReportWriter):
         table = {
             "columns": report.schema,
             "data": [
-                dict(
-                    (c["key"], format_data(val, format_iso_dates=True))
+                {
+                    c["key"]: format_data(val, format_iso_dates=True)
                     for (c, val) in zip(report.schema, report.read_datum(datum))
-                )
+                }
                 for datum in report_data
             ],
         }
+
 
         if has_totals:
             table["totals"] = report.get_totals(report_data)
@@ -452,7 +449,7 @@ class ReportWriterPopulator(object):
 
 def get_writer_names():
     """ Get the registered writer names. """
-    return set([k for k, v in six.iteritems(REPORT_WRITERS_MAP) if v])
+    return {k for k, v in six.iteritems(REPORT_WRITERS_MAP) if v}
 
 
 def get_writer_instance(writer_name):

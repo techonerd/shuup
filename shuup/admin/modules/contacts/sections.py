@@ -27,9 +27,12 @@ class BasicInfoContactSection(Section):
 
     @classmethod
     def get_context_data(cls, contact, request=None):
-        context = {}
+        context = {
+            'groups': sorted(
+                contact.groups.all_except_defaults(), key=(lambda x: force_text(x))
+            )
+        }
 
-        context["groups"] = sorted(contact.groups.all_except_defaults(), key=(lambda x: force_text(x)))
 
         context["shops"] = sorted(contact.shops.all(), key=(lambda x: force_text(x)))
 

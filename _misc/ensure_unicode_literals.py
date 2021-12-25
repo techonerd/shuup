@@ -25,10 +25,14 @@ class StringVisitor(XNodeVisitor):
         if is_being_formatted:
             self.formattees.add(s)
             return
-        if not ("\n" in s or s.islower() or s.isupper()):  # Doesn't look like a constant or docstring
-            if " " in s.strip():  # Has spaces, that's texty
-                if "%" in s or not all(32 <= ord(c) < 127 for c in s):  # Has a formatting character or is non-ascii
-                    self.texts.add(s)
+        if (
+            "\n" not in s
+            and not s.islower()
+            and not s.isupper()
+            and " " in s.strip()
+            and ("%" in s or any(not 32 <= ord(c) < 127 for c in s))
+        ):  # Has a formatting character or is non-ascii
+            self.texts.add(s)
 
     def get_stats(self):
         stat_bits = []

@@ -118,13 +118,11 @@ class Campaign(MoneyPropped, TranslatableModel):
         if not self.active:  # move to manager?
             return False
         if self.start_datetime and self.end_datetime:
-            if self.start_datetime <= now() <= self.end_datetime:
-                return True
-            return False
-        elif self.start_datetime and not self.end_datetime:
+            return self.start_datetime <= now() <= self.end_datetime
+        elif self.start_datetime:
             if self.start_datetime > now():
                 return False
-        elif not self.start_datetime and self.end_datetime:
+        elif self.end_datetime:
             if self.end_datetime < now():
                 return False
         return True
@@ -167,11 +165,10 @@ class CatalogCampaign(Campaign):
             if filter_pk not in matching_catalog_filters:
                 return False
 
-        # All filters match so let's check that also all the conditions match
-        for condition_pk in self.conditions.values_list("pk", flat=True):
-            if condition_pk not in matching_context_conditions:
-                return False
-        return True
+        return all(
+            condition_pk in matching_context_conditions
+            for condition_pk in self.conditions.values_list("pk", flat=True)
+        )
 
     @classmethod
     def get_for_product(cls, shop_product):
@@ -217,10 +214,17 @@ class CatalogCampaign(Campaign):
             )
 
         all_possible_campaigns_ids = campaigns_based_on_conditions | campaigns_based_on_catalog_filters
-        matching = []
-        for campaign in cls.objects.filter(id__in=all_possible_campaigns_ids):
-            if campaign.rules_match(context, shop_product, matching_catalog_filters, matching_context_conditions):
-                matching.append(campaign)
+        matching = [
+            campaign
+            for campaign in cls.objects.filter(id__in=all_possible_campaigns_ids)
+            if campaign.rules_match(
+                context,
+                shop_product,
+                matching_catalog_filters,
+                matching_context_conditions,
+            )
+        ]
+
         cache.set(key, matching, timeout=None)
         return matching
 
@@ -287,7 +291,6 @@ class BasketCampaign(Campaign):
 
     @classmethod
     def get_matching(cls, basket, lines):
-        matching = []
         exclude_condition_ids = set()
         product_id_to_qty = get_product_ids_and_quantities(basket)
         lines_suppliers = get_lines_suppliers(basket)
@@ -326,11 +329,11 @@ class BasketCampaign(Campaign):
         if lines_suppliers:
             queryset = queryset.filter(Q(supplier__isnull=True) | Q(supplier__in=lines_suppliers))
 
-        for campaign in queryset.prefetch_related("conditions").distinct():
-            if campaign.rules_match(basket, lines):
-                matching.append(campaign)
-
-        return matching
+        return [
+            campaign
+            for campaign in queryset.prefetch_related("conditions").distinct()
+            if campaign.rules_match(basket, lines)
+        ]
 
     def rules_match(self, basket, lines):
         """
@@ -348,10 +351,7 @@ class BasketCampaign(Campaign):
         if self.coupon and not (self.coupon.active and self.coupon.code.upper() in [c.upper() for c in basket.codes]):
             return False
 
-        for rule in self.conditions.all():
-            if not rule.matches(basket, lines):
-                return False
-        return True
+        return all(rule.matches(basket, lines) for rule in self.conditions.all())
 
 
 class CouponUsage(models.Model):
@@ -457,14 +457,12 @@ class Coupon(models.Model):
 
     @classmethod
     def generate_code(cls, length=6):
-        if length > 12:
-            length = 12
+        length = min(length, 12)
         return "".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(length))
 
     @property
     def exhausted(self):
-        val = bool(self.usage_limit and self.usages.count() >= self.usage_limit)
-        return val
+        return bool(self.usage_limit and self.usages.count() >= self.usage_limit)
 
     @property
     def attached(self):

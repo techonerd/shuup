@@ -588,9 +588,10 @@ class BaseBasket(OrderSource):
         if current_line_data.get("shop_id") != shop.id:
             return False
 
-        if isinstance(extra, dict):  # If we have extra data, compare it to that in this line
-            if not compare_partial_dicts(extra, current_line_data):  # Extra data not similar? Okay then. :(
-                return False
+        if isinstance(extra, dict) and not compare_partial_dicts(
+            extra, current_line_data
+        ):  # Extra data not similar? Okay then. :(
+            return False
         return True
 
     def _find_product_line_data(self, product, supplier, shop, extra):
@@ -737,11 +738,8 @@ class BaseBasket(OrderSource):
             yield ValidationError(msg % advice, code="no_common_payment")
 
     def get_validation_errors(self):
-        for error in super(BaseBasket, self).get_validation_errors():
-            yield error
-
-        for error in self.get_methods_validation_errors():
-            yield error
+        yield from super(BaseBasket, self).get_validation_errors()
+        yield from self.get_methods_validation_errors()
 
     def get_product_ids_and_quantities(self):
         q_counter = Counter()

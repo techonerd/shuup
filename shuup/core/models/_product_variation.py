@@ -129,8 +129,7 @@ def hash_combination(combination):
 
     bits.sort()
     raw_combination = ",".join(bits)
-    hashed_combination = hashlib.sha1(force_bytes(raw_combination)).hexdigest()
-    return hashed_combination
+    return hashlib.sha1(force_bytes(raw_combination)).hexdigest()
 
 
 def get_combination_hash_from_variable_mapping(parent, variables):

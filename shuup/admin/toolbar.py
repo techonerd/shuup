@@ -278,32 +278,30 @@ class DropdownActionButton(BaseActionButton):
             if not item:  # TODO: Revise!
                 continue
 
-            for bit in item.render(request):
-                yield bit
+            yield from item.render(request)
         yield "</div>"
 
     def render(self, request):
-        if not get_missing_permissions(request.user, self.required_permissions):
-            if not self.items:
-                return
-            yield '<div class="btn-group" role="group">'
+        if get_missing_permissions(request.user, self.required_permissions):
+            return
 
-            if self.split_button:
-                for bit in self.split_button.render(request):
-                    yield bit
+        if not self.items:
+            return
+        yield '<div class="btn-group" role="group">'
 
-            yield "<button %s>" % flatatt_filter(
-                {"type": "button", "class": self.get_computed_class(), "data-toggle": "dropdown", "title": self.tooltip}
-            )
+        if self.split_button:
+            yield from self.split_button.render(request)
+        yield "<button %s>" % flatatt_filter(
+            {"type": "button", "class": self.get_computed_class(), "data-toggle": "dropdown", "title": self.tooltip}
+        )
 
-            if not self.split_button:
-                yield self.render_label()
-                yield " "
+        if not self.split_button:
+            yield self.render_label()
+            yield " "
 
-            yield "</button>"
-            for bit in self.render_dropdown(request):
-                yield bit
-            yield "</div>"
+        yield "</button>"
+        yield from self.render_dropdown(request)
+        yield "</div>"
 
 
 class DropdownItem(BaseActionButton):
@@ -354,8 +352,7 @@ class PostActionDropdownItem(PostActionButton):
     def render(self, request):
         if not get_missing_permissions(request.user, self.required_permissions):
             button = super(PostActionDropdownItem, self).render(request)
-            for bit in button:
-                yield bit
+            yield from button
 
     @staticmethod
     def visible_for_object(object):
@@ -402,8 +399,7 @@ class ButtonGroup(list):
                 if callable(button):  # Buttons may be functions/other callables too
                     yield button(request)
                 else:
-                    for bit in button.render(request):
-                        yield bit
+                    yield from button.render(request)
         yield "</div>"
 
 
@@ -463,9 +459,7 @@ class Toolbar(list):
 
         for group in self:
             if group:
-                for bit in group.render(request):
-                    yield bit
-
+                yield from group.render(request)
         yield "</div></form></div>"
 
     def render_to_string(self, request):
@@ -578,10 +572,9 @@ def get_default_edit_toolbar(
             if save_as_copy_button:
                 dropdown_options.append(save_as_copy_button)
 
-        if object and object.pk:
-            if discard_url:
-                dropdown_options.append(DropdownDivider())
-                dropdown_options.append(get_discard_button(try_reverse(discard_url, pk=object.pk)))
+        if object and object.pk and discard_url:
+            dropdown_options.append(DropdownDivider())
+            dropdown_options.append(get_discard_button(try_reverse(discard_url, pk=object.pk)))
 
         save_dropdown = DropdownActionButton(
             dropdown_options,
@@ -596,19 +589,18 @@ def get_default_edit_toolbar(
     if with_save_as_copy and not with_split_save:
         toolbar.append(save_as_copy_button)
 
-    if object and object.pk:
-        if delete_url:
-            delete_url = try_reverse(delete_url, pk=object.pk)
-            toolbar.append(
-                PostActionButton(
-                    post_url=delete_url,
-                    text=_("Delete"),
-                    icon="fa fa-trash",
-                    extra_css_class="btn-danger",
-                    confirm=_("Are you sure you wish to delete %s?") % object,
-                    required_permissions=required_permissions,
-                )
+    if object and object.pk and delete_url:
+        delete_url = try_reverse(delete_url, pk=object.pk)
+        toolbar.append(
+            PostActionButton(
+                post_url=delete_url,
+                text=_("Delete"),
+                icon="fa fa-trash",
+                extra_css_class="btn-danger",
+                confirm=_("Are you sure you wish to delete %s?") % object,
+                required_permissions=required_permissions,
             )
+        )
 
     if existing_toolbar:
         toolbar.extend(Toolbar.for_view(view_object))

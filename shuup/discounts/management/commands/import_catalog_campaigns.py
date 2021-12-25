@@ -123,10 +123,9 @@ def _get_data_from_campaign(campaign):  # noqa
 
     for effect in campaign.effects.all():
         if isinstance(effect, ProductDiscountAmount):
-            data.update({"discount_amount_value": effect.discount_amount})
+            data["discount_amount_value"] = effect.discount_amount
         elif isinstance(effect, ProductDiscountPercentage):
-            data.update({"discount_percentage": effect.discount_percentage})
-
+            data["discount_percentage"] = effect.discount_percentage
     return data, categories, contact_groups, contacts, products, happy_hours
 
 
@@ -147,7 +146,7 @@ def _open_condition_items(condition_items):
         if isinstance(condition, Category):
             category = condition
 
-        if isinstance(condition, PersonContact) or isinstance(condition, CompanyContact):
+        if isinstance(condition, (PersonContact, CompanyContact)):
             contact = condition
 
         if isinstance(condition, ContactGroup):

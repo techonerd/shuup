@@ -29,10 +29,7 @@ def valid_view(context):
             return False
 
     view_name = getattr(view_class, "__name__", "")
-    if view_name == "EditorView":
-        return False
-
-    return True
+    return view_name != "EditorView"
 
 
 def add_gdpr_consent_resources(context, content):

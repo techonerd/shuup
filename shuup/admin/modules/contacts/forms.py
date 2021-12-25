@@ -69,7 +69,7 @@ class ContactBaseFormMixin(object):
                 upload_path="/contacts", kind="images", clearable=True
             )
 
-        if not self.request or (self.request and self.request.user.is_superuser):
+        if not self.request or self.request.user.is_superuser:
             shops_qs = Shop.objects.all()
         else:
             shops_qs = Shop.objects.filter(staff_members__in=[self.request.user])

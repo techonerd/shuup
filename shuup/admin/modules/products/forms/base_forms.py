@@ -328,7 +328,10 @@ class ProductAttributesForm(forms.Form):
     def __init__(self, **kwargs):
         self.default_language = kwargs.pop("default_language", getattr(settings, "PARLER_DEFAULT_LANGUAGE_CODE"))
         self.languages = to_language_codes(kwargs.pop("languages", ()), self.default_language)
-        self.language_names = dict((lang, get_language_name(lang)) for lang in self.languages)
+        self.language_names = {
+            lang: get_language_name(lang) for lang in self.languages
+        }
+
         self.product = kwargs.pop("product")
         self.attributes = self.product.get_available_attribute_queryset()
         self.trans_name_map = defaultdict(dict)
@@ -417,7 +420,7 @@ class BaseProductMediaForm(MultiLanguageModelForm):
 
         if self.allowed_media_kinds:
             # multiple media kinds allowed, filter the choices list to reflect the `self.allowed_media_kinds`
-            allowed_kinds_values = set(v.value for v in self.allowed_media_kinds)
+            allowed_kinds_values = {v.value for v in self.allowed_media_kinds}
             self.fields["kind"].choices = [
                 (value, choice) for value, choice in self.fields["kind"].choices if value in allowed_kinds_values
             ]
@@ -521,9 +524,12 @@ class ProductImageMediaForm(BaseProductMediaForm):
         super(ProductImageMediaForm, self).__init__(**kwargs)
         self.fields["file"].widget = forms.HiddenInput()
 
-        if self.instance.pk and self.instance.file:
-            if self.product.primary_image_id == self.instance.pk:
-                self.fields["is_primary"].initial = True
+        if (
+            self.instance.pk
+            and self.instance.file
+            and self.product.primary_image_id == self.instance.pk
+        ):
+            self.fields["is_primary"].initial = True
 
     def clean_file(self):
         file = self.cleaned_data.get("file")

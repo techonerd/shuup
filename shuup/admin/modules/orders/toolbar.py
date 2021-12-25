@@ -37,11 +37,12 @@ class OrderDetailToolbar(Toolbar):
         self._build_provided_toolbar_buttons()
 
     def _build_action_button(self):
-        action_menu_items = []
+        action_menu_items = [
+            button(object=self.order)
+            for button in get_provide_objects("admin_order_toolbar_action_item")
+            if button.visible_for_object(self.order)
+        ]
 
-        for button in get_provide_objects("admin_order_toolbar_action_item"):
-            if button.visible_for_object(self.order):
-                action_menu_items.append(button(object=self.order))
 
         if action_menu_items:
             self.append(

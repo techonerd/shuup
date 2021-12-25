@@ -131,9 +131,9 @@ class ContactGroupMembersFormPart(FormPart):
     def get_form_defs(self):
         contact_group = self.object
         form = formset_factory(ContactGroupMembersForm, ContactGroupMembersFormSet, extra=1, can_delete=True)
-        template_name = "shuup/admin/contact_groups/_edit_members_form.jinja"
-
         if contact_group.pk:
+            template_name = "shuup/admin/contact_groups/_edit_members_form.jinja"
+
             yield TemplatedFormDef(
                 "members",
                 form,

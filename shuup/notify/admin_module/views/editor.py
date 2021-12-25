@@ -39,9 +39,10 @@ def script_item_editor(request):
     form = ScriptItemEditForm(
         script_item=item_class.unserialize(init_data["data"], validate=False),
         event_class=Event.class_for_identifier(init_data["eventIdentifier"]),
-        data=(request.POST if request.POST else None),
-        files=(request.FILES if request.FILES else None),
+        data=request.POST or None,
+        files=request.FILES or None,
     )
+
     form.initial = form.get_initial()
     context = {
         "form": form,

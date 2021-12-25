@@ -96,7 +96,7 @@ class WizardView(TemplateView):
 
     def get_final_pane_identifier(self):
         visible_panes = list(filter(lambda x: x.visible(), self.panes))
-        if len(visible_panes) > 0:
+        if visible_panes:
             return visible_panes[-1].identifier
         return 0
 

@@ -584,10 +584,7 @@ class Order(MoneyPropped, models.Model):
         verbose_name_plural = _("orders")
 
     def __str__(self):  # pragma: no cover
-        if self.billing_address_id:
-            name = self.billing_address.name
-        else:
-            name = "-"
+        name = self.billing_address.name if self.billing_address_id else "-"
         if ShuupSettings.get_setting("SHUUP_ENABLE_MULTIPLE_SHOPS"):
             return "Order %s (%s, %s)" % (self.identifier, self.shop.name, name)
         else:
@@ -693,12 +690,11 @@ class Order(MoneyPropped, models.Model):
         return super(Order, self).full_clean(exclude, validate_unique)
 
     def save(self, *args, **kwargs):
-        if not self.creator_id:
-            if not settings.SHUUP_ALLOW_ANONYMOUS_ORDERS:
-                raise ValidationError(
-                    "Error! Anonymous (userless) orders are not allowed "
-                    "when `SHUUP_ALLOW_ANONYMOUS_ORDERS` is not enabled."
-                )
+        if not self.creator_id and not settings.SHUUP_ALLOW_ANONYMOUS_ORDERS:
+            raise ValidationError(
+                "Error! Anonymous (userless) orders are not allowed "
+                "when `SHUUP_ALLOW_ANONYMOUS_ORDERS` is not enabled."
+            )
         self._cache_values()
         first_save = not self.pk
         if self.status is None:
@@ -760,7 +756,11 @@ class Order(MoneyPropped, models.Model):
 
     def can_create_payment(self):
         zero = Money(0, self.currency)
-        return not (self.is_paid() or self.is_canceled()) and self.get_total_unpaid_amount() > zero
+        return (
+            not self.is_paid()
+            and not self.is_canceled()
+            and self.get_total_unpaid_amount() > zero
+        )
 
     def create_payment(self, amount, payment_identifier=None, description=""):
         """
@@ -843,7 +843,9 @@ class Order(MoneyPropped, models.Model):
         :return: Saved, complete Shipment object.
         :rtype: shuup.core.models.Shipment
         """
-        if not product_quantities or not any(quantity > 0 for quantity in product_quantities.values()):
+        if not product_quantities or all(
+            quantity <= 0 for quantity in product_quantities.values()
+        ):
             raise NoProductsToShipException(
                 "Error! No products to ship (`quantities` is empty or has no quantity over 0)."
             )
@@ -937,27 +939,29 @@ class Order(MoneyPropped, models.Model):
         refunds = self.lines.refunds()
         if supplier:
             refunds = refunds.filter(Q(parent_line__supplier=supplier) | Q(supplier=supplier))
-        total = sum([line.taxful_price.amount.value for line in refunds])
+        total = sum(line.taxful_price.amount.value for line in refunds)
         return Money(-total, self.currency)
 
     def get_total_unrefunded_amount(self, supplier=None):
         if supplier:
             total_refund_amount = sum(
-                [
-                    line.max_refundable_amount.value
-                    for line in self.lines.filter(supplier=supplier).exclude(type=OrderLineType.REFUND)
-                ]
-            )
-            arbitrary_refunds = abs(
-                sum(
-                    [
-                        refund_line.taxful_price.value
-                        for refund_line in self.lines.filter(
-                            supplier=supplier, parent_line__isnull=True, type=OrderLineType.REFUND
-                        )
-                    ]
+                line.max_refundable_amount.value
+                for line in self.lines.filter(supplier=supplier).exclude(
+                    type=OrderLineType.REFUND
                 )
             )
+
+            arbitrary_refunds = abs(
+                sum(
+                    refund_line.taxful_price.value
+                    for refund_line in self.lines.filter(
+                        supplier=supplier,
+                        parent_line__isnull=True,
+                        type=OrderLineType.REFUND,
+                    )
+                )
+            )
+
             return (
                 Money(max(total_refund_amount - arbitrary_refunds, 0), self.currency)
                 if total_refund_amount
@@ -969,7 +973,7 @@ class Order(MoneyPropped, models.Model):
         queryset = self.lines.all()
         if supplier:
             queryset = queryset.filter(supplier=supplier)
-        return sum([line.max_refundable_quantity for line in queryset])
+        return sum(line.max_refundable_quantity for line in queryset)
 
     def get_total_tax_amount(self):
         return sum((line.tax_amount for line in self.lines.all()), Money(0, self.currency))
@@ -1012,8 +1016,16 @@ class Order(MoneyPropped, models.Model):
         else:
             quantities = suppliers_to_product_quantities[supplier.id]
 
-        products = dict((product.pk, product) for product in Product.objects.filter(pk__in=quantities.keys()))
-        quantities = dict((products[product_id], quantity) for (product_id, quantity) in quantities.items())
+        products = {
+            product.pk: product
+            for product in Product.objects.filter(pk__in=quantities.keys())
+        }
+
+        quantities = {
+            products[product_id]: quantity
+            for (product_id, quantity) in quantities.items()
+        }
+
         return self.create_shipment(quantities, supplier=supplier)
 
     def check_all_verified(self):
@@ -1207,11 +1219,13 @@ class Order(MoneyPropped, models.Model):
         return refunded_prods.distinct().values_list("parent_line__product_id", flat=True)
 
     def get_unshipped_products(self, supplier=None):
-        return dict(
-            (product, summary_datum)
-            for product, summary_datum in self.get_product_summary(supplier=supplier).items()
+        return {
+            product: summary_datum
+            for product, summary_datum in self.get_product_summary(
+                supplier=supplier
+            ).items()
             if summary_datum["unshipped"]
-        )
+        }
 
     def get_status_display(self):
         return force_text(self.status)

@@ -23,10 +23,7 @@ def anonymize(shop_id: int, contact_id: int = None, user_id: int = None):
         if not contact:
             contact = CompanyContact.objects.filter(pk=contact_id).first()
 
-    user = None
-    if user_id:
-        user = get_user_model().objects.filter(pk=user_id).first()
-
+    user = get_user_model().objects.filter(pk=user_id).first() if user_id else None
     anonymizer = Anonymizer()
     if contact or user:
         anonymizer.anonymize(shop, contact, user)

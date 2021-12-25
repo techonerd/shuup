@@ -42,11 +42,7 @@ def update_filter_cache(sender, instance, **kwargs):
             # this is plain ``ShopProduct`` save
             update_matching_catalog_filters(instance)
         else:
-            # This comes from categories through and it should only
-            # update those categories the shop product attached into
-            ids = None
-            if action in ["post_add", "post_remove"]:
-                ids = kwargs["pk_set"]
+            ids = kwargs["pk_set"] if action in ["post_add", "post_remove"] else None
             if ids:
                 if instance and instance.primary_category:
                     ids.add(instance.primary_category.pk)

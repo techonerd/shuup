@@ -133,7 +133,12 @@ def handle_add_var(request, basket, product_id, quantity=1, unit_type="internal"
     """
 
     # Resolve the combination...
-    vars = dict((int(k.split("_")[-1]), int(v)) for (k, v) in six.iteritems(kwargs) if k.startswith("var_"))
+    vars = {
+        int(k.split("_")[-1]): int(v)
+        for (k, v) in six.iteritems(kwargs)
+        if k.startswith("var_")
+    }
+
     var_product = ProductVariationResult.resolve(product_id, combination=vars)
     if not var_product:
         raise ValidationError(_("Error! This variation is not available."), code="invalid_variation_combination")
@@ -209,12 +214,14 @@ def handle_set_customer(request, basket, customer, orderer=None):  # noqa (C901)
             # to set a customer different from the current one
             # he must be a super user or at least staff
             # but allow to set a customer when the current one is not authenticated
-            if customer != request_contact and is_authenticated(request.user):
-
-                if not (is_superuser or is_staff):
-                    raise ValidationError(
-                        _("You don't have the required permission to assign this customer."), code="no_permission"
-                    )
+            if (
+                customer != request_contact
+                and is_authenticated(request.user)
+                and not (is_superuser or is_staff)
+            ):
+                raise ValidationError(
+                    _("You don't have the required permission to assign this customer."), code="no_permission"
+                )
 
             basket.orderer = customer
 
@@ -234,7 +241,11 @@ def handle_set_customer(request, basket, customer, orderer=None):  # noqa (C901)
             if orderer not in company_members:
                 raise ValidationError(_("Orderer is not a member of the company."), code="orderer_not_company_member")
 
-            elif not (is_superuser or is_staff) and request_contact not in company_members:
+            elif (
+                not is_superuser
+                and not is_staff
+                and request_contact not in company_members
+            ):
                 raise ValidationError(_("You are not a member of the company."), code="not_company_member")
 
             basket.orderer = orderer

@@ -228,10 +228,9 @@ class Category(MPTTModel, TranslatableModel):
         if not customer or customer.is_anonymous:
             if self.visibility != CategoryVisibility.VISIBLE_TO_ALL:
                 return False
-        else:
-            if self.visibility == CategoryVisibility.VISIBLE_TO_GROUPS:
-                group_ids = customer.groups.all().values_list("id", flat=True)
-                return self.visibility_groups.filter(id__in=group_ids).exists()
+        elif self.visibility == CategoryVisibility.VISIBLE_TO_GROUPS:
+            group_ids = customer.groups.all().values_list("id", flat=True)
+            return self.visibility_groups.filter(id__in=group_ids).exists()
         return True
 
     @staticmethod
@@ -247,22 +246,24 @@ class Category(MPTTModel, TranslatableModel):
 
     @atomic
     def soft_delete(self, user=None):
-        if not self.status == CategoryStatus.DELETED:
-            for shop_product in self.primary_shop_products.all():
-                shop_product.categories.remove(self)
-                shop_product.primary_category = None
-                shop_product.save()
-            for shop_product in self.shop_products.all():
-                shop_product.categories.remove(self)
-                shop_product.primary_category = None
-                shop_product.save()
-            for child in self.children.all():
-                child.parent = None
-                child.save()
-            self.status = CategoryStatus.DELETED
-            self.add_log_entry("Success! Deleted (soft).", kind=LogEntryKind.DELETION, user=user)
-            self.save()
-            category_deleted.send(sender=type(self), category=self)
+        if self.status == CategoryStatus.DELETED:
+            return
+
+        for shop_product in self.primary_shop_products.all():
+            shop_product.categories.remove(self)
+            shop_product.primary_category = None
+            shop_product.save()
+        for shop_product in self.shop_products.all():
+            shop_product.categories.remove(self)
+            shop_product.primary_category = None
+            shop_product.save()
+        for child in self.children.all():
+            child.parent = None
+            child.save()
+        self.status = CategoryStatus.DELETED
+        self.add_log_entry("Success! Deleted (soft).", kind=LogEntryKind.DELETION, user=user)
+        self.save()
+        category_deleted.send(sender=type(self), category=self)
 
     def save(self, *args, **kwargs):
         rv = super(Category, self).save(*args, **kwargs)

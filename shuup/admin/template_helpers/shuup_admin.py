@@ -85,10 +85,11 @@ def get_front_url(context):
 
 @contextfunction
 def get_support_id(context):
-    support_id = None
-    if is_telemetry_enabled():
-        support_id = configuration.get(None, "shuup_support_id")
-    return support_id
+    return (
+        configuration.get(None, "shuup_support_id")
+        if is_telemetry_enabled()
+        else None
+    )
 
 
 def get_browser_urls(request):
@@ -197,7 +198,7 @@ def get_shop_count(context):
     Return the number of shops accessible by the currently logged in user
     """
     request = context["request"]
-    if not (request and not django_compat.is_anonymous(request.user)):
+    if not request or django_compat.is_anonymous(request.user):
         return 0
     return Shop.objects.get_for_user(request.user).count()
 

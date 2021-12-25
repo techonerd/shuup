@@ -48,12 +48,11 @@ class PasswordChangeForm(forms.Form):
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")
         password2 = self.cleaned_data.get("password2")
-        if password1 and password2:
-            if password1 != password2:
-                raise forms.ValidationError(
-                    self.error_messages["password_mismatch"],
-                    code="password_mismatch",
-                )
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError(
+                self.error_messages["password_mismatch"],
+                code="password_mismatch",
+            )
         return password2
 
     def clean_old_password(self):
@@ -85,10 +84,12 @@ class UserChangePasswordView(UpdateView):
         return get_user_model().objects.all()
 
     def get_toolbar(self):
-        toolbar = get_default_edit_toolbar(
-            self, "change_password_form", discard_url=get_model_url(self.object), with_split_save=False
+        return get_default_edit_toolbar(
+            self,
+            "change_password_form",
+            discard_url=get_model_url(self.object),
+            with_split_save=False,
         )
-        return toolbar
 
     def get_form_kwargs(self):
         kwargs = super(UserChangePasswordView, self).get_form_kwargs()

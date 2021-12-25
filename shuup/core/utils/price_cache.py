@@ -41,12 +41,10 @@ def _get_price_info_cache_key_params(context, item, quantity, **context_args):
             AnonymousContact._cached_default_group_id = anonymous_group_id
             groups = [anonymous_group_id]
 
-    extra_kwargs = dict()
-    for key, value in context_args.items():
-        if hasattr(value, "pk"):
-            extra_kwargs[key] = value.pk
-        else:
-            extra_kwargs[key] = value
+    extra_kwargs = {
+        key: value.pk if hasattr(value, "pk") else value
+        for key, value in context_args.items()
+    }
 
     return dict(
         identifier="price_info_cache",

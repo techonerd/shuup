@@ -55,11 +55,10 @@ class ProcessPaymentView(DetailView):
                 messages.add_message(request, messages.INFO, _("The order is canceled so you can't pay for it."))
                 return redirect("shuup:order_complete", pk=order.pk, key=order.key)
 
-            if not order.is_paid():
-                if payment_method:
-                    return payment_method.get_payment_process_response(
-                        order=order, urls=get_payment_urls(request, order)
-                    )
+            if not order.is_paid() and payment_method:
+                return payment_method.get_payment_process_response(
+                    order=order, urls=get_payment_urls(request, order)
+                )
         elif mode == "return":
             if payment_method:
                 payment_method.process_payment_return_request(order=order, request=request)

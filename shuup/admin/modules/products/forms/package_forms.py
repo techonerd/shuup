@@ -30,18 +30,18 @@ class PackageChildForm(forms.Form):
     def get_shop_products(self, user):
         if not user or not self.product:
             return ShopProduct.objects.none()
-        else:
-            shop_products = []
-            shop_queryset = Shop.objects.all()
-            if not user.is_superuser:
-                shop_queryset = shop_queryset.filter(staff_members=user)
-            for shop in shop_queryset:
-                try:
-                    shop_product = self.product.get_shop_instance(shop)
-                    shop_products.append(shop_product)
-                except ShopProduct.DoesNotExist:
-                    continue
-            return shop_products
+
+        shop_products = []
+        shop_queryset = Shop.objects.all()
+        if not user.is_superuser:
+            shop_queryset = shop_queryset.filter(staff_members=user)
+        for shop in shop_queryset:
+            try:
+                shop_product = self.product.get_shop_instance(shop)
+                shop_products.append(shop_product)
+            except ShopProduct.DoesNotExist:
+                continue
+        return shop_products
 
     def get_stock_statuses(self, user=None):
         shop_products = self.get_shop_products(user)
@@ -74,7 +74,7 @@ def get_stock_statuses(product, shop_products):
     sales_unit_symbol = sales_unit.symbol if sales_unit else ""
     for shop_product in shop_products:
         for supplier in shop_product.suppliers.enabled(shop=shop_product.shop):
-            if supplier in stocks.keys():
+            if supplier in stocks:
                 continue
             stock_status = supplier.get_stock_status(product_id=product.id)
             stocks[supplier] = (supplier, stock_status, sales_decimals, sales_unit_symbol)
@@ -161,7 +161,7 @@ class PackageChildFormSet(ProductChildBaseFormSet):
                 removed_products.add(child_product)
             elif child_product != self.parent_product:
                 selected_products.add(child_product)
-            elif self.request and child_product == self.parent_product:
+            elif self.request:
                 messages.error(self.request, _("Couldn't add product %s to its own package.") % str(child_product))
             quantity = child_form.cleaned_data.get("quantity")
             selected_product_quantities[child_product] = quantity

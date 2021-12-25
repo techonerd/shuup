@@ -66,9 +66,8 @@ def process_files(paths, adders, verbose, write):
                 print("[!]:%-*s: Modified" % (width, path))  # noqa
             else:
                 print("[!]:%-*s: Requires license header" % (width, path))  # noqa
-        else:
-            if verbose:
-                print("[+]:%-*s: File has license header" % (width, path))  # noqa
+        elif verbose:
+            print("[+]:%-*s: File has license header" % (width, path))  # noqa
     return missing
 
 

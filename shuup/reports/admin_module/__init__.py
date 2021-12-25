@@ -30,7 +30,4 @@ class ReportsAdminModule(AdminModule):
         ]
 
     def get_extra_permissions(self):
-        report_identifiers = set()
-        for report_class in get_report_classes():
-            report_identifiers.add(report_class)
-        return report_identifiers
+        return set(get_report_classes())

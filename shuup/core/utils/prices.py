@@ -33,7 +33,7 @@ def convert_taxness(request, item, priceful, with_taxes):
 
     taxed_priceful = _make_taxed(request, item, priceful, with_taxes)
 
-    return taxed_priceful if taxed_priceful else priceful
+    return taxed_priceful or priceful
 
 
 def _make_taxed(request, item, priceful, with_taxes):

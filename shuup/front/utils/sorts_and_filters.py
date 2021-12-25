@@ -181,12 +181,10 @@ class ProductListForm(forms.Form):
                 )
                 has_choices = is_choice_field and len(field.choices)
 
-                if field_key not in self.fields:
-                    if is_choice_field and has_choices:
-                        self.fields[field_key] = field
-                    elif not is_choice_field:
-                        self.fields[field_key] = field
-
+                if field_key not in self.fields and (
+                    is_choice_field and has_choices or not is_choice_field
+                ):
+                    self.fields[field_key] = field
             for field_key, choices in extend_obj.get_choices_for_fields() or []:
                 if field_key in self.fields:
                     self.fields[field_key].widget.choices += choices

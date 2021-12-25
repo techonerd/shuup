@@ -101,10 +101,11 @@ class ContactDetailToolbar(Toolbar):
         self.append(DropdownActionButton(menu_items, icon="fa fa-user", text=_("Options"), extra_css_class="btn-info"))
 
     def build_provides_buttons(self):
-        action_menu_items = []
-        for button in get_provide_objects("admin_contact_toolbar_action_item"):
-            if button.visible_for_object(self.contact):
-                action_menu_items.append(button(object=self.contact))
+        action_menu_items = [
+            button(object=self.contact)
+            for button in get_provide_objects("admin_contact_toolbar_action_item")
+            if button.visible_for_object(self.contact)
+        ]
 
         if action_menu_items:
             self.append(

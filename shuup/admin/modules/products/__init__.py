@@ -121,13 +121,12 @@ class ProductModule(AdminModule):
                     url=manipulate_query_string(url, name=query),
                     is_action=True,
                 )
-            else:
-                if query.lower() not in skus_seen:
-                    yield SearchResult(
-                        text=_('Create Product with SKU "%s"') % query,
-                        url=manipulate_query_string(url, sku=query),
-                        is_action=True,
-                    )
+            elif query.lower() not in skus_seen:
+                yield SearchResult(
+                    text=_('Create Product with SKU "%s"') % query,
+                    url=manipulate_query_string(url, sku=query),
+                    is_action=True,
+                )
 
     def get_help_blocks(self, request, kind):
         actions = []

@@ -113,23 +113,17 @@ class WeightLimitsBehaviorComponent(ServiceBehaviorComponent):
     def get_unavailability_reasons(self, service, source):
         from shuup.core.models import Order
 
-        if isinstance(source, Order):
-            lines = source.lines.all()
-        else:
-            lines = source.get_lines()
-
+        lines = source.lines.all() if isinstance(source, Order) else source.get_lines()
         # sum the weight of products of the given supplier
         if service.supplier:
             weight = sum(((line.get("weight") or 0) for line in lines if line.supplier == service.supplier), 0)
         else:
             weight = sum(((line.get("weight") or 0) for line in lines), 0)
 
-        if self.min_weight:
-            if weight < self.min_weight:
-                yield ValidationError(_("Minimum weight not met."), code="min_weight")
-        if self.max_weight:
-            if weight > self.max_weight:
-                yield ValidationError(_("Maximum weight exceeded."), code="max_weight")
+        if self.min_weight and weight < self.min_weight:
+            yield ValidationError(_("Minimum weight not met."), code="min_weight")
+        if self.max_weight and weight > self.max_weight:
+            yield ValidationError(_("Maximum weight exceeded."), code="max_weight")
 
 
 class WeightBasedPriceRange(TranslatableModel):
@@ -177,8 +171,6 @@ class WeightBasedPricingBehaviorComponent(ServiceBehaviorComponent):
 
     def _get_matching_range_with_lowest_price(self, service, source):
         if service.supplier:
-            total_gross_weight = 0
-
             from shuup.core.models import Order
 
             if isinstance(source, Order):
@@ -186,9 +178,13 @@ class WeightBasedPricingBehaviorComponent(ServiceBehaviorComponent):
             else:
                 lines = source.get_product_lines()
 
-            for line in lines:
-                if line.supplier == service.supplier:
-                    total_gross_weight += line.product.gross_weight * line.quantity
+            total_gross_weight = sum(
+                line.product.gross_weight * line.quantity
+                for line in lines
+                if line.supplier == service.supplier
+            )
+
+
         else:
             total_gross_weight = source.total_gross_weight
 
@@ -263,11 +259,7 @@ class OrderTotalLimitBehaviorComponent(ServiceBehaviorComponent):
         if service.supplier:
             from shuup.core.models import Order
 
-            if isinstance(source, Order):
-                lines = source.lines.all()
-            else:
-                lines = source.get_lines()
-
+            lines = source.lines.all() if isinstance(source, Order) else source.get_lines()
             total = source.create_price(0)
             lines_count = 0
 

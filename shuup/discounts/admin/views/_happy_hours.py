@@ -51,11 +51,8 @@ def _get_initial_data_for_time_ranges(happy_hour):
         if from_hour is None:
             from_hour = time_range.from_hour
 
-        if to_hour is None:
+        if to_hour is None or time_range.to_hour < to_hour:
             to_hour = time_range.to_hour
-        elif time_range.to_hour < to_hour:
-            to_hour = time_range.to_hour
-
         if not time_range.parent and time_range.weekday not in weekdays:
             weekdays.append(time_range.weekday)
 

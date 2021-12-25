@@ -170,18 +170,18 @@ class JsonOrderCreator(object):
         # _process_product_line pops this value, so need to store it here
         supplier_info = sline.get("supplier")
 
-        if type != "text":
-            if not self._process_line_quantity_and_price(source, sline, sl_kwargs):
-                valid = False
+        if type != "text" and not self._process_line_quantity_and_price(
+            source, sline, sl_kwargs
+        ):
+            valid = False
 
         if type == "product":
             if not self._process_product_line(source, sline, sl_kwargs):
                 valid = False
-        else:
-            if supplier_info:
-                supplier = self.safe_get_first(Supplier, pk=supplier_info["id"])
-                if supplier:
-                    sl_kwargs["supplier"] = supplier
+        elif supplier_info:
+            supplier = self.safe_get_first(Supplier, pk=supplier_info["id"])
+            if supplier:
+                sl_kwargs["supplier"] = supplier
 
         if valid:
             source.add_line(**sl_kwargs)
@@ -203,11 +203,10 @@ class JsonOrderCreator(object):
         fields = {"name": name, "phone": phone, "email": email}
         if is_company:
             tax_number = billing_address.get("tax_number", None)
-            fields.update({"tax_number": tax_number})
-            customer = CompanyContact(**fields)
+            fields["tax_number"] = tax_number
+            return CompanyContact(**fields)
         else:
-            customer = PersonContact(**fields)
-        return customer
+            return PersonContact(**fields)
 
     def _get_address(self, address, is_company, save):
         if self.is_empty_address(address):
@@ -447,14 +446,16 @@ class JsonOrderCreator(object):
         """
 
         current_lines = state.get("lines", [])
-        current_product_ids = set()
-        for line in current_lines:
-            if line["type"] == "product" and line["product"] is not None:
-                current_product_ids.add(line["product"]["id"])
+        current_product_ids = {
+            line["product"]["id"]
+            for line in current_lines
+            if line["type"] == "product" and line["product"] is not None
+        }
 
-        old_prod_ids = set()
-        for line in order_to_update.lines.exclude(product_id=None):
-            old_prod_ids.add(line.product.id)
+        old_prod_ids = {
+            line.product.id
+            for line in order_to_update.lines.exclude(product_id=None)
+        }
 
         return old_prod_ids - current_product_ids
 

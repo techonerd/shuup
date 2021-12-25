@@ -51,22 +51,20 @@ class ScriptTemplateView(TemplateView):
         if script_template_class:
             script_template = script_template_class()
 
-            # the template has a form for configuration.. lets redirect to the correct view
             if script_template.get_form():
                 return redirect("shuup_admin:notify.script-template-config", id=identifier)
-            else:
-                shop = get_shop(request)
-                script = script_template.create_script(shop)
+            shop = get_shop(request)
+            script = script_template.create_script(shop)
 
-                if script:
-                    script.template = identifier
-                    script.save(update_fields=["template"])
-                    messages.success(request, _("Script created from template."))
+            if script:
+                script.template = identifier
+                script.save(update_fields=["template"])
+                messages.success(request, _("Script created from template."))
 
-                return redirect("shuup_admin:notify.script.list")
         else:
             messages.error(request, _("Template Script not found."))
-            return redirect("shuup_admin:notify.script.list")
+
+        return redirect("shuup_admin:notify.script.list")
 
 
 class ScriptTemplateConfigView(FormView):

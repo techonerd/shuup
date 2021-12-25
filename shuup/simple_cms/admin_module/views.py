@@ -143,9 +143,7 @@ class PageForm(MultiLanguageModelForm):
         if other_qs.exists():
             return False
         own_qs = qs.filter(master=self.instance).exclude(language_code=language_code)
-        if own_qs.exists():
-            return False
-        return True
+        return not own_qs.exists()
 
     def _save_translation(self, instance, translation):
         if not translation.url:  # No url? Skip saving this.
@@ -191,10 +189,13 @@ class PageEditView(SaveFormPartsMixin, FormPartsViewMixin, CreateOrUpdateView):
         return get_default_edit_toolbar(self, save_form_id, delete_url=self.get_delete_url())
 
     def get_delete_url(self):
-        url = None
-        if self.object.pk:
-            url = reverse_lazy("shuup_admin:simple_cms.page.delete", kwargs={"pk": self.object.pk})
-        return url
+        return (
+            reverse_lazy(
+                "shuup_admin:simple_cms.page.delete", kwargs={"pk": self.object.pk}
+            )
+            if self.object.pk
+            else None
+        )
 
     def get_queryset(self):
         return super(PageEditView, self).get_queryset().for_shop(get_shop(self.request)).not_deleted()

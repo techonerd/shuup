@@ -65,10 +65,15 @@ class Breadcrumbs(object):
         entries = []
 
         # See if we have the top level menu entry ("Contacts" for example).
-        if url_admin_module and url_admin_module.breadcrumbs_menu_entry:
-            # (But don't duplicate steps)
-            if url_admin_module.breadcrumbs_menu_entry.url != request.path or not current_view_entry.text:
-                entries.append(url_admin_module.breadcrumbs_menu_entry)
+        if (
+            url_admin_module
+            and url_admin_module.breadcrumbs_menu_entry
+            and (
+                url_admin_module.breadcrumbs_menu_entry.url != request.path
+                or not current_view_entry.text
+            )
+        ):
+            entries.append(url_admin_module.breadcrumbs_menu_entry)
 
         # See if the view declares parents...
         parent_getter = getattr(view, "get_breadcrumb_parents", None)
@@ -88,5 +93,4 @@ class Breadcrumbs(object):
         if not len(self.entries):
             return
 
-        entries = [MenuEntry(_("Home"), url="shuup_admin:dashboard")] + self.entries
-        return entries
+        return [MenuEntry(_("Home"), url="shuup_admin:dashboard")] + self.entries

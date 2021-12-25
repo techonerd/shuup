@@ -81,6 +81,4 @@ def get_taxes_of_effective_rules(taxing_context, tax_rules):
 
     # Group rules by priority
     grouped_rules = groupby(highest_override_group, attrgetter("priority"))
-    tax_groups = [[rule.tax for rule in rules] for (_, rules) in grouped_rules]
-
-    return tax_groups
+    return [[rule.tax for rule in rules] for (_, rules) in grouped_rules]

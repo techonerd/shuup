@@ -26,7 +26,7 @@ class CustomerGroupPricingModule(PricingModule):
             ShopProduct.objects.filter(product_id=product_id, shop=shop).values_list("default_price_value", flat=True)
         )
 
-        if len(default_price_values) == 0:  # No shop product
+        if not default_price_values:  # No shop product
             return PriceInfo(price=shop.create_price(0), base_price=shop.create_price(0), quantity=quantity)
         else:
             default_price = default_price_values[0] or 0

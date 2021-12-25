@@ -96,16 +96,17 @@ class OrderConfigurationFormPart(FormPart):
         )
 
     def form_valid(self, form):
-        if self.name in form.forms:
-            used_form = form[self.name]
-            if not used_form.has_changed():
-                return None  # no need to save
+        if self.name not in form.forms:
+            return
+        used_form = form[self.name]
+        if not used_form.has_changed():
+            return None  # no need to save
 
-            for key in used_form.fields.keys():
-                try:
-                    ConfigurationItem.objects.get(shop=self.object, key=key).delete()
-                except ConfigurationItem.DoesNotExist:
-                    continue
+        for key in used_form.fields.keys():
+            try:
+                ConfigurationItem.objects.get(shop=self.object, key=key).delete()
+            except ConfigurationItem.DoesNotExist:
+                continue
 
-            for key, value in six.iteritems(used_form.cleaned_data):
-                configuration.set(shop=self.object, key=key, value=value)
+        for key, value in six.iteritems(used_form.cleaned_data):
+            configuration.set(shop=self.object, key=key, value=value)

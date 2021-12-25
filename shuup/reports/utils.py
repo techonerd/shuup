@@ -18,9 +18,7 @@ NO_DATA_MESSAGE = "No results"
 
 def get_empty_data(schema, data, message):
     keys = [s.get("key") for s in schema]
-    return_data = {}
-    for key in keys:
-        return_data[key] = message
+    return_data = {key: message for key in keys}
     return {
         "data": [return_data],
         "start": data["start"],

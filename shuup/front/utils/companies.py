@@ -31,8 +31,12 @@ class TaxNumberCleanMixin(object):
 
     def clean_tax_number(self):
         tax_number = self.cleaned_data["tax_number"].strip()
-        if self.request and validate_tax_number(self.request.shop) and tax_number:
-            if tax_numbers.validate(tax_number) != "vat":
-                raise ValidationError(_("Tax number is not valid."), code="not_valid_tax_number")
+        if (
+            self.request
+            and validate_tax_number(self.request.shop)
+            and tax_number
+            and tax_numbers.validate(tax_number) != "vat"
+        ):
+            raise ValidationError(_("Tax number is not valid."), code="not_valid_tax_number")
 
         return tax_number

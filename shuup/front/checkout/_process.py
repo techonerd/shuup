@@ -47,8 +47,11 @@ class CheckoutProcess(object):
         kwargs = {}
         kwargs.update(self.phase_kwargs)
         kwargs.update(extra_kwargs)
-        phase = phase_class(checkout_process=self, horizontal_template=self.horizontal_template, **kwargs)
-        return phase
+        return phase_class(
+            checkout_process=self,
+            horizontal_template=self.horizontal_template,
+            **kwargs
+        )
 
     def _load_phases(self):
         phases = OrderedDict()

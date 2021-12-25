@@ -35,9 +35,8 @@ class TaxfulFrom(PriceRate):
         """
         if price.includes_tax:
             return price
-        else:
-            tax_ratio = taxful.value / taxless.value if taxless else 1
-            return TaxfulPrice(price.amount * tax_ratio)
+        tax_ratio = taxful.value / taxless.value if taxless else 1
+        return TaxfulPrice(price.amount * tax_ratio)
 
 
 class TaxlessFrom(PriceRate):

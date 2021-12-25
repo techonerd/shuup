@@ -87,10 +87,7 @@ class BasePopupChoiceWidget(Widget):
         raise NotImplementedError("Error! Not implemented: `BasePopupChoiceWidget` -> `get_object()`.")
 
     def render(self, name, value, attrs=None, renderer=None):
-        if value:
-            obj = self.get_object(value)
-        else:
-            obj = None
+        obj = self.get_object(value) if value else None
         pk_input = HiddenInput().render(name, value, attrs)
         media_text = self.render_text(obj)
         bits = [self.get_browse_markup(), pk_input, " ", media_text]

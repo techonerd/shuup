@@ -43,10 +43,9 @@ class LanguageTwist(CodeTemplate):
     def twist(self, string):
         if string in self.catalog:
             string = self.catalog[string].string
-        else:
-            if string not in self.not_in_catalog:
-                self.not_in_catalog.add(string)
-                print_("Not in catalog: %r" % string, file=sys.stderr)
+        elif string not in self.not_in_catalog:
+            self.not_in_catalog.add(string)
+            print_("Not in catalog: %r" % string, file=sys.stderr)
 
         return repr(string)
 

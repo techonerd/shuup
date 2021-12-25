@@ -78,18 +78,20 @@ class TaxRule(models.Model):
         """
         if taxing_context.customer_tax_group:
             tax_groups = set(self.customer_tax_groups.all())
-            if tax_groups:
-                if taxing_context.customer_tax_group not in tax_groups:
-                    return False
-        if self.country_codes_pattern:
-            if not pattern_matches(self.country_codes_pattern, taxing_context.country_code):
+            if tax_groups and taxing_context.customer_tax_group not in tax_groups:
                 return False
-        if self.region_codes_pattern:
-            if not pattern_matches(self.region_codes_pattern, taxing_context.region_code):
-                return False
-        if self.postal_codes_pattern:
-            if not pattern_matches(self.postal_codes_pattern, taxing_context.postal_code):
-                return False
+        if self.country_codes_pattern and not pattern_matches(
+            self.country_codes_pattern, taxing_context.country_code
+        ):
+            return False
+        if self.region_codes_pattern and not pattern_matches(
+            self.region_codes_pattern, taxing_context.region_code
+        ):
+            return False
+        if self.postal_codes_pattern and not pattern_matches(
+            self.postal_codes_pattern, taxing_context.postal_code
+        ):
+            return False
         return True
 
     def save(self, *args, **kwargs):

@@ -143,15 +143,14 @@ class MediaBrowserView(TemplateView):
         data = json.loads(request.body.decode("utf-8"))
         action = data.get("action")
         handler = getattr(self, "handle_post_%s" % action, None)
-        if handler:
-            try:
-                return handler(data)
-            except ObjectDoesNotExist as odne:
-                return JsonResponse({"error": force_text(odne)}, status=400)
-            except Problem as prob:
-                return JsonResponse({"error": force_text(prob)})
-        else:
+        if not handler:
             return JsonResponse({"error": "Error! Unknown action `%s`." % action})
+        try:
+            return handler(data)
+        except ObjectDoesNotExist as odne:
+            return JsonResponse({"error": force_text(odne)}, status=400)
+        except Problem as prob:
+            return JsonResponse({"error": force_text(prob)})
 
     def handle_get_folders(self, data):
         shop = get_shop(self.request)
@@ -206,10 +205,7 @@ class MediaBrowserView(TemplateView):
         """
         shop = get_shop(self.request)
         current_folder = _get_folder_query(shop, self.user).get(pk=data["id"])
-        path = []
-        for folder in current_folder.logical_path:
-            path.append(folder.name)
-
+        path = [folder.name for folder in current_folder.logical_path]
         path.append(current_folder.name + "/")
         return JsonResponse({"folderPath": "/".join(path)})
 

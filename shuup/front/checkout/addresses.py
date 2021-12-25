@@ -132,7 +132,10 @@ class AddressesPhase(CheckoutPhaseViewMixin, FormView):
         else:
             self.storage["company"] = None
 
-        process_and_save_basket = any([form[form_key].has_changed() for form_key in form.forms])
+        process_and_save_basket = any(
+            form[form_key].has_changed() for form_key in form.forms
+        )
+
         if process_and_save_basket:
             self.process()
             self.basket.save()
@@ -166,11 +169,12 @@ class AddressesPhase(CheckoutPhaseViewMixin, FormView):
         saved_addr_qs = SavedAddress.objects.filter(owner=self.basket.customer, status=SavedAddressStatus.ENABLED)
         context["saved_address"] = {}
         for saved_address in saved_addr_qs:
-            data = {}
+            data = {
+                key: force_text(value)
+                for key, value in model_to_dict(saved_address.address).items()
+                if value
+            }
 
-            for key, value in model_to_dict(saved_address.address).items():
-                if value:
-                    data[key] = force_text(value)
 
             context["saved_address"][saved_address.pk] = data
 

@@ -35,11 +35,7 @@ class ShuupReportBase(object):
     form_class = BaseReportForm
 
     def __init__(self, **kwargs):
-        if kwargs.get("initial"):
-            self.options = kwargs["initial"]
-        else:
-            self.options = kwargs
-
+        self.options = kwargs["initial"] if kwargs.get("initial") else kwargs
         self.start_date = kwargs.get("start_date", None)
         self.end_date = kwargs.get("end_date", None)
         if self.options.get("date_range"):
@@ -105,10 +101,7 @@ class ShuupReportBase(object):
         return getattr(datum, c["key"], None)
 
     def read_datum(self, datum):
-        if isinstance(datum, dict):
-            getter = self.dict_getter
-        else:
-            getter = self.cls_getter
+        getter = self.dict_getter if isinstance(datum, dict) else self.cls_getter
         return [(c["getter"] if callable(c.get("getter")) else getter)(c, datum) for c in self.schema]
 
     def get_totals(self, data):
@@ -143,8 +136,10 @@ def get_report_class(name, request):
 
 
 def get_report_classes(request=None, provides_key="reports"):
-    items = {}
-    for cls in list(get_provide_objects(provides_key)):
-        if not (request and not cls.is_available(request)):
-            items[cls.get_name()] = cls
+    items = {
+        cls.get_name(): cls
+        for cls in list(get_provide_objects(provides_key))
+        if not (request and not cls.is_available(request))
+    }
+
     return OrderedDict(sorted(items.items(), key=lambda t: t[1].title))

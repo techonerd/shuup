@@ -73,8 +73,7 @@ class ProductParentBaseView(FormPartsViewMixin, UpdateView):
         return super(ProductParentBaseView, self).post(request, *args, **kwargs)
 
     def get_form_part_classes(self):
-        for form_part_class in self.form_part_classes:
-            yield form_part_class
+        yield from self.form_part_classes
 
     def get_context_data(self, **kwargs):
         context = super(ProductParentBaseView, self).get_context_data(**kwargs)

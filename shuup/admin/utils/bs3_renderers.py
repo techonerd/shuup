@@ -18,16 +18,17 @@ class AdminFieldRenderer(FieldRenderer):
         self.set_placeholder = bool(kwargs.pop("set_placeholder", True))
         self.widget_class = kwargs.pop("widget_class", None)
         default_show_help_block = True
-        if isinstance(field.field, ModelMultipleChoiceField):
-            if not self.widget_class:
-                self.widget_class = "multiselect"
+        if (
+            isinstance(field.field, ModelMultipleChoiceField)
+            and not self.widget_class
+        ):
+            self.widget_class = "multiselect"
         if isinstance(field.field, DateTimeField):
             field.field.widget.attrs["readonly"] = ""  # Make datetime fields readonly
             if not self.widget_class:
                 self.widget_class = "datetime"
-        if isinstance(field.field, DateField):
-            if not self.widget_class:
-                self.widget_class = "date"
+        if isinstance(field.field, DateField) and not self.widget_class:
+            self.widget_class = "date"
         self.show_help_block = bool(kwargs.pop("show_help_block", default_show_help_block))
 
         kwargs["required_css_class"] = "required-field"

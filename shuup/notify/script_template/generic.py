@@ -80,14 +80,13 @@ class GenericSendEmailScriptTemplate(BaseScriptTemplate):
 
     def get_script_steps(self, form):
         action_data = {
-            "template_data": {},
-            "language": {"constant": settings.PARLER_DEFAULT_LANGUAGE_CODE},
+            'template_data': {},
+            'language': {"constant": settings.PARLER_DEFAULT_LANGUAGE_CODE},
+            'recipient': {"constant": form["base"].cleaned_data["recipient"]}
+            if form["base"].cleaned_data.get("send_to") == "other"
+            else {"variable": "customer_email"},
         }
 
-        if form["base"].cleaned_data.get("send_to") == "other":
-            action_data["recipient"] = {"constant": form["base"].cleaned_data["recipient"]}
-        else:
-            action_data["recipient"] = {"variable": "customer_email"}
 
         for language in form.forms:
             form_lang = form[language]
@@ -130,28 +129,26 @@ class GenericSendEmailScriptTemplate(BaseScriptTemplate):
 
     def get_initial(self):
         # if we have a script bound, parse its content
-        if self.script_instance:
-            send_email = None
-
-            # search for the SendEmail action
-            for step in self.script_instance.get_steps():
-                for action in step._actions:
-                    if isinstance(action, SendEmail):
-                        send_email = action
-                        break
-
-            send_to_customer = send_email.data.get("recipient", {}).get("variable") == "customer_email"
-            recipient = "" if send_to_customer else send_email.data["recipient"].get("constant", "")
-
-            initial = {"base-recipient": recipient, "base-send_to": "customer" if send_to_customer else "other"}
-
-            for language, data in send_email.data["template_data"].items():
-                for data_key, data_value in data.items():
-                    initial["{0}-{1}".format(language, data_key)] = data_value
-            return initial
-
-        else:
+        if not self.script_instance:
             return super(GenericSendEmailScriptTemplate, self).get_initial()
+        send_email = None
+
+        # search for the SendEmail action
+        for step in self.script_instance.get_steps():
+            for action in step._actions:
+                if isinstance(action, SendEmail):
+                    send_email = action
+                    break
+
+        send_to_customer = send_email.data.get("recipient", {}).get("variable") == "customer_email"
+        recipient = "" if send_to_customer else send_email.data["recipient"].get("constant", "")
+
+        initial = {"base-recipient": recipient, "base-send_to": "customer" if send_to_customer else "other"}
+
+        for language, data in send_email.data["template_data"].items():
+            for data_key, data_value in data.items():
+                initial["{0}-{1}".format(language, data_key)] = data_value
+        return initial
 
     def can_edit_script(self):
         """

@@ -117,7 +117,7 @@ class DiscountFromProduct(BasketLineEffect):
         for line in original_lines:
             if supplier and line.supplier != supplier:
                 continue
-            if not line.type == OrderLineType.PRODUCT:
+            if line.type != OrderLineType.PRODUCT:
                 continue
             if line.product.pk not in product_ids:
                 continue
@@ -163,7 +163,7 @@ class DiscountFromCategoryProducts(BasketLineEffect):
         )
 
     def get_discount_lines(self, order_source, original_lines, supplier):  # noqa (C901)
-        if not (self.discount_percentage or self.discount_amount):
+        if not self.discount_percentage and not self.discount_amount:
             return []
 
         campaign = self.campaign
@@ -175,14 +175,13 @@ class DiscountFromCategoryProducts(BasketLineEffect):
             if supplier and line.supplier != supplier:
                 continue
 
-            if not line.type == OrderLineType.PRODUCT:
+            if line.type != OrderLineType.PRODUCT:
                 continue
             if line.product.variation_parent:
                 if line.product.variation_parent.pk not in product_ids and line.product.pk not in product_ids:
                     continue
-            else:
-                if line.product.pk not in product_ids:
-                    continue
+            elif line.product.pk not in product_ids:
+                continue
 
             amount = order_source.zero_price.value
             base_price = line.base_unit_price.value * line.quantity

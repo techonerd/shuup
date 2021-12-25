@@ -145,8 +145,7 @@ class DataImporter(object):
 
     def process_data(self):
         mapping = self.create_mapping()
-        data_map = self.map_data_to_fields(mapping)
-        return data_map
+        return self.map_data_to_fields(mapping)
 
     def create_mapping(self):
         mapping = {}
@@ -180,7 +179,11 @@ class DataImporter(object):
                     else:
                         mapping[name] = map_base
 
-        mapping = dict((fold_mapping_name(mname), mdata) for (mname, mdata) in six.iteritems(mapping))
+        mapping = {
+            fold_mapping_name(mname): mdata
+            for (mname, mdata) in six.iteritems(mapping)
+        }
+
         self.mapping = mapping
         return mapping
 
@@ -238,10 +241,10 @@ class DataImporter(object):
         self.map_data_to_fields(self.mapping)
 
     def matcher(self, value):
-        for original_field, new_field in six.iteritems(self.extra_matches):
-            if new_field == value:
-                return True
-        return False
+        return any(
+            new_field == value
+            for original_field, new_field in six.iteritems(self.extra_matches)
+        )
 
     def set_extra_match(self, sess, value, mapping):
         target_field = mapping.get("id")
@@ -316,7 +319,7 @@ class DataImporter(object):
 
     @atomic  # noqa (C901)
     def process_row(self, row):
-        if all((not val) for val in row.values()):  # Empty row, skip it
+        if not any(row.values()):  # Empty row, skip it
             return
 
         # ignore the row if there is a column 'ignore" with a valid value
@@ -380,24 +383,23 @@ class DataImporter(object):
         return (value, has_related)
 
     def _handle_special_row_values(self, mapping, value):
-        if mapping.get("datatype") in ["datetime", "date"]:
-            if isinstance(value, float):  # Sort of terrible
-                value = datetime.datetime(*xlrd.xldate_as_tuple(value, self.data.meta["xls_datemode"]))
-        if isinstance(value, float):
-            if int(value) == value:
-                value = int(value)
+        if mapping.get("datatype") in ["datetime", "date"] and isinstance(
+            value, float
+        ):  # Sort of terrible
+            value = datetime.datetime(*xlrd.xldate_as_tuple(value, self.data.meta["xls_datemode"]))
+        if isinstance(value, float) and int(value) == value:
+            value = int(value)
         return value
 
     def _handle_row_field(self, field, mapping, orig_value, row_session, target, value):
         value = self._get_field_choices_value(field, value)
 
-        if isinstance(field, BooleanField):
-            if not value or value == "" or value == " ":
-                value = False
+        if isinstance(field, BooleanField) and (
+            not value or value == "" or value == " "
+        ):
+            value = False
 
-        if mapping.get("fk") and value is not None and value.pk:
-            setattr(target, field.name, value)
-        else:
+        if not mapping.get("fk") or value is None or not value.pk:
             try:
                 value = field.to_python(value)
             except Exception as exc:
@@ -409,7 +411,7 @@ class DataImporter(object):
                 )
             else:
                 value = self._meta.mutate_normal_field_set(row_session, field, value, original=orig_value)
-            setattr(target, field.name, value)
+        setattr(target, field.name, value)
 
     def _get_field_choices_value(self, field, value):
         if field.choices:
@@ -465,7 +467,7 @@ class DataImporter(object):
         :rtype: list
         """
         fields = []
-        mapped_keys = [k for k in self.data_map]
+        mapped_keys = list(self.data_map)
         for model in self.get_related_models():
             for field in model._meta.local_fields:
                 if only_non_mapped and field.name in mapped_keys:
@@ -506,7 +508,12 @@ class DataImporter(object):
         :return: Found object or ``None``
         """
         field_map_values = [(fname, mapping, row.get(fname)) for (fname, mapping) in six.iteritems(self.unique_fields)]
-        row_keys = dict((mapping["field"].name, value) for (fname, mapping, value) in field_map_values if value)
+        row_keys = {
+            mapping["field"].name: value
+            for (fname, mapping, value) in field_map_values
+            if value
+        }
+
         if row_keys:
             qs = [Q(**{fname: value}) for (fname, value) in six.iteritems(row_keys)]
             fields = [field.name for field in self.model._meta.local_fields]

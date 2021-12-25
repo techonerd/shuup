@@ -73,14 +73,12 @@ class CouponCode(models.Model):
 
     @classmethod
     def generate_code(cls, length=6):
-        if length > 12:
-            length = 12
+        length = min(length, 12)
         return "".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(length))
 
     @property
     def exhausted(self):
-        val = bool(self.usage_limit and self.usages.count() >= self.usage_limit)
-        return val
+        return bool(self.usage_limit and self.usages.count() >= self.usage_limit)
 
     @property
     def attached(self):

@@ -92,11 +92,14 @@ class EmailAuthenticationForm(AuthenticationForm):
                 self.error_messages["inactive"],
                 code="inactive",
             )
-        if settings.SHUUP_ENABLE_MULTIPLE_SHOPS and settings.SHUUP_MANAGE_CONTACTS_PER_SHOP:
-            if not user.is_superuser:
-                shop = self.request.shop
-                if shop not in user.contact.shops.all():
-                    raise forms.ValidationError(_("You are not allowed to log in to this shop."))
+        if (
+            settings.SHUUP_ENABLE_MULTIPLE_SHOPS
+            and settings.SHUUP_MANAGE_CONTACTS_PER_SHOP
+            and not user.is_superuser
+        ):
+            shop = self.request.shop
+            if shop not in user.contact.shops.all():
+                raise forms.ValidationError(_("You are not allowed to log in to this shop."))
 
         super(EmailAuthenticationForm, self).confirm_login_allowed(user)
 

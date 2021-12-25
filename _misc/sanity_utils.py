@@ -5,11 +5,7 @@ import re
 import sys
 from ast import AST, Attribute, Name, iter_fields
 
-if sys.version_info[0] == 3:
-    string_types = (str,)
-else:
-    string_types = (basestring,)  # noqa
-
+string_types = (str, ) if sys.version_info[0] == 3 else (basestring, )
 IGNORED_DIRS = [
     "*.egg-info",
     ".bzr",
@@ -113,7 +109,7 @@ def find_files(
             _remove_ignored_directories(path, dirs, ignored_dirs, ignored_path_regexps)
             for filename in files:
                 filepath = posixpath.join(path, filename)
-                if not all(not fnmatch.fnmatch(filename, x) for x in ignored_patterns):
+                if any(fnmatch.fnmatch(filename, x) for x in ignored_patterns):
                     continue
                 if not _check_allowed_extension(filepath, allowed_extensions):
                     continue
@@ -129,7 +125,7 @@ def _check_allowed_extension(filepath, allowed_extensions):
 def _remove_ignored_directories(path, dirs, ignored_dirs, ignored_path_regexps):
     matches = set()
     for ignored_dir in ignored_dirs:
-        matches.update(set(dir for dir in dirs if fnmatch.fnmatch(dir, ignored_dir)))
+        matches.update({dir for dir in dirs if fnmatch.fnmatch(dir, ignored_dir)})
 
     for ignore_re in ignored_path_regexps:
         matches.update(dir for dir in dirs if re.match(ignore_re, posixpath.join(path, dir)))

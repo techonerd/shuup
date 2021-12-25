@@ -253,21 +253,17 @@ def get_menu_entry_categories(request):  # noqa (C901)
             if not category:
                 category_identifier = force_text(entry.category or module.name)
                 category = menu_categories.get(category_identifier)
-                if not category:
-                    menu_categories[category_identifier] = category = _MenuCategory(
-                        identifier=category_identifier,
-                        name=category_identifier,
-                        icon=menu_category_icons.get(category_identifier, "fa fa-circle"),
-                    )
+            if not category:
+                menu_categories[category_identifier] = category = _MenuCategory(
+                    identifier=category_identifier,
+                    name=category_identifier,
+                    icon=menu_category_icons.get(category_identifier, "fa fa-circle"),
+                )
             category.entries.append(entry)
             all_categories.add(category)
 
     # clean categories that eventually have no children or entries
-    categories = []
-    for cat in all_categories:
-        if not cat.entries:
-            continue
-        categories.append(cat)
+    categories = [cat for cat in all_categories if cat.entries]
     clean_categories = [c for menu_identifier, c in six.iteritems(menu_categories) if c in categories]
 
     return customize_menu(clean_categories, request)

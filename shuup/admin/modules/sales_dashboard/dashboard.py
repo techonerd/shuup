@@ -112,25 +112,25 @@ class OrderValueChartDashboardBlock(DashboardChartBlock):
 
         # only calculate cumulative and average if there are at least 3 months
         if len(sum_sales_data) >= 3:
-            count = 0
             total = Decimal()
 
-            for month_sale in sum_sales_data.values():
+            for count, month_sale in enumerate(sum_sales_data.values()):
                 total = total + month_sale["sum"]
                 cumulative_sales.append(total)
                 average_sales.append(total / (count + 1))
-                count = count + 1
-
         # this will be on top of all bars
         if average_sales:
-            mixed_chart.add_data(_("Average Sales"), [v for v in average_sales], ChartType.LINE)
+            mixed_chart.add_data(_("Average Sales"), list(average_sales), ChartType.LINE)
 
         # this will be under the cummulative bars
         mixed_chart.add_data(_("Sales"), [v["sum"] for v in sum_sales_data.values()], ChartType.BAR)
 
         # this will be under all others charts
         if cumulative_sales:
-            mixed_chart.add_data(_("Cumulative Total Sales"), [v for v in cumulative_sales], ChartType.BAR)
+            mixed_chart.add_data(
+                _("Cumulative Total Sales"), list(cumulative_sales), ChartType.BAR
+            )
+
 
         self.cached_chart = mixed_chart
         return mixed_chart

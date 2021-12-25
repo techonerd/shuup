@@ -222,7 +222,7 @@ class SeparatedValuesField(models.TextField):
     def get_db_prep_value(self, value, connection, prepared=False):
         if not value:
             return
-        if isinstance(value, list) or isinstance(value, tuple):
+        if isinstance(value, (list, tuple)):
             return self.separator.join([force_text(s) for s in value])
         if isinstance(value, six.string_types):
             return value
@@ -233,10 +233,10 @@ class SeparatedValuesField(models.TextField):
 
 
 def polymorphic_has_pk(obj):
-    if getattr(obj, "polymorphic_primary_key_name", None):
-        if getattr(obj, obj.polymorphic_primary_key_name, None):
-            return True
-    return False
+    return bool(
+        getattr(obj, "polymorphic_primary_key_name", None)
+        and getattr(obj, obj.polymorphic_primary_key_name, None)
+    )
 
 
 class PolymorphicJSONField(JSONField):
@@ -247,16 +247,17 @@ class PolymorphicJSONField(JSONField):
 
     def pre_init(self, value, obj):
         try:
-            if obj._state.adding:
-                # Make sure the primary key actually exists on the object before
-                # checking if it's empty. This is a special case for South datamigrations
-                # see: https://github.com/bradjasper/django-jsonfield/issues/52
-                if getattr(obj, "pk", None) is not None or polymorphic_has_pk(obj):
-                    if isinstance(value, six.string_types):
-                        try:
-                            return json.loads(value, **self.load_kwargs)
-                        except ValueError:
-                            raise ValidationError(_("Enter a valid JSON."))
+            if (
+                obj._state.adding
+                and (
+                    getattr(obj, "pk", None) is not None or polymorphic_has_pk(obj)
+                )
+                and isinstance(value, six.string_types)
+            ):
+                try:
+                    return json.loads(value, **self.load_kwargs)
+                except ValueError:
+                    raise ValidationError(_("Enter a valid JSON."))
         except AttributeError:
             # south fake meta class doesn't create proper attributes
             # see this:

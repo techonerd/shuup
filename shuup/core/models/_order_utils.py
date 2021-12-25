@@ -18,9 +18,7 @@ from ._counters import Counter, CounterType
 
 def calc_reference_number_checksum(rn):
     muls = (7, 3, 1)
-    s = 0
-    for i, ch in enumerate(rn[::-1]):
-        s += muls[i % 3] * int(ch)
+    s = sum(muls[i % 3] * int(ch) for i, ch in enumerate(rn[::-1]))
     s = 10 - (s % 10)
     return force_text(s)[-1]
 

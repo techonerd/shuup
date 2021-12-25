@@ -28,11 +28,7 @@ class Command(makemessages.Command):
                     return
                 elif args[0] == "--ignore":
                     kwargs["default"] = IGNORES
-                elif args[0] == "--no-obsolete":
-                    kwargs["default"] = True
-                elif args[0] == "--no-location":
-                    kwargs["default"] = True
-                elif args[0] == "--no-pot-date":
+                elif args[0] in ["--no-obsolete", "--no-location", "--no-pot-date"]:
                     kwargs["default"] = True
                 parser.add_argument(*args, **kwargs)
                 if args[0].startswith("--no-") and kwargs.get("default"):

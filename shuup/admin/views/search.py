@@ -37,15 +37,15 @@ def get_search_results(request, query):
                         is_action=True,
                     )
                 )
-    results = sorted(chain(normal_results, menu_entry_results), key=lambda r: r.relevance, reverse=True)
-    return results
+    return sorted(
+        chain(normal_results, menu_entry_results),
+        key=lambda r: r.relevance,
+        reverse=True,
+    )
 
 
 class SearchView(View):
     def get(self, request, *args, **kwargs):
         query = request.GET.get("q")
-        if query:
-            results = get_search_results(request, query)
-        else:
-            results = []
+        results = get_search_results(request, query) if query else []
         return JsonResponse({"results": [r.to_json() for r in results]})

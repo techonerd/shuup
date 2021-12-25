@@ -87,9 +87,8 @@ class ScriptEditView(CreateOrUpdateView):
         wf = form.save()
         if is_new:
             return redirect("shuup_admin:notify.script.edit-content", pk=wf.pk)
-        else:
-            add_create_or_change_message(self.request, self.object, is_new=is_new)
-            return redirect("shuup_admin:notify.script.edit", pk=wf.pk)
+        add_create_or_change_message(self.request, self.object, is_new=is_new)
+        return redirect("shuup_admin:notify.script.edit", pk=wf.pk)
 
     def get_queryset(self):
         return super(ScriptEditView, self).get_queryset().filter(shop=get_shop(self.request))

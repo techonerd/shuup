@@ -31,7 +31,7 @@ def get_product_context(request, product, language=None, supplier=None):
     return cached_load("SHUUP_FRONT_PRODUCT_CONTEXT_SPEC")(request, product, language, supplier)
 
 
-def get_default_product_context(request, product, language=None, supplier=None):  # noqa (C901)
+def get_default_product_context(request, product, language=None, supplier=None):    # noqa (C901)
     """
     Get product context.
 
@@ -44,15 +44,19 @@ def get_default_product_context(request, product, language=None, supplier=None):
         language = get_language()
 
     shop_product = product.get_shop_instance(request.shop)
-    context = {}
-    context["product"] = product
-    context["category"] = shop_product.primary_category
-    context["orderability_errors"] = list(
-        shop_product.get_orderability_errors(
-            supplier=supplier, quantity=1, customer=request.customer, ignore_minimum=True
-        )
-    )
-    context["variation_children"] = []
+    context = {
+        'product': product,
+        'category': shop_product.primary_category,
+        'orderability_errors': list(
+            shop_product.get_orderability_errors(
+                supplier=supplier,
+                quantity=1,
+                customer=request.customer,
+                ignore_minimum=True,
+            )
+        ),
+        'variation_children': [],
+    }
 
     selected_variation = None
     variation_sku = request.GET.get("variation")

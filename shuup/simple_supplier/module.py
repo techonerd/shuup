@@ -46,11 +46,15 @@ class SimpleSupplierModule(BaseSupplierModule):
         if stock_status.error:
             yield ValidationError(stock_status.error, code="stock_error")
 
-        if self.supplier.stock_managed and stock_status.stock_managed:
-            if backorder_maximum is not None and quantity > stock_status.logical_count + backorder_maximum:
-                yield ValidationError(
-                    stock_status.message or _("Error! Insufficient quantity in stock."), code="stock_insufficient"
-                )
+        if (
+            self.supplier.stock_managed
+            and stock_status.stock_managed
+            and backorder_maximum is not None
+            and quantity > stock_status.logical_count + backorder_maximum
+        ):
+            yield ValidationError(
+                stock_status.message or _("Error! Insufficient quantity in stock."), code="stock_insufficient"
+            )
 
     def get_stock_statuses(self, product_ids, *args, **kwargs):
         stock_counts = (
@@ -67,10 +71,20 @@ class SimpleSupplierModule(BaseSupplierModule):
             .values_list("pk", "physical_count", "logical_count", "stock_managed")
         )
 
-        values = dict(
-            (product_id, (physical_count or 0, logical_count or 0, stock_managed or False))
-            for (product_id, physical_count, logical_count, stock_managed) in stock_counts
-        )
+        values = {
+            product_id: (
+                physical_count or 0,
+                logical_count or 0,
+                stock_managed or False,
+            )
+            for (
+                product_id,
+                physical_count,
+                logical_count,
+                stock_managed,
+            ) in stock_counts
+        }
+
         null = (0, 0, self.supplier.stock_managed)
 
         stati = []
@@ -88,7 +102,7 @@ class SimpleSupplierModule(BaseSupplierModule):
                 )
             )
 
-        return dict((pss.product_id, pss) for pss in stati)
+        return {pss.product_id: pss for pss in stati}
 
     def adjust_stock(
         self, product_id, delta, purchase_price=0, created_by=None, type=StockAdjustmentType.INVENTORY, *args, **kwargs
@@ -135,21 +149,25 @@ class SimpleSupplierModule(BaseSupplierModule):
         if latest_event:
             sv.stock_value_value = latest_event.purchase_price_value * sv.logical_count
 
-        if self.supplier.stock_managed and has_installed("shuup.notify"):
-            if sv.alert_limit and sv.physical_count < sv.alert_limit:
-                product = Product.objects.filter(id=product_id).first()
-                if product:
-                    from .notify_events import AlertLimitReached
+        if (
+            self.supplier.stock_managed
+            and has_installed("shuup.notify")
+            and sv.alert_limit
+            and sv.physical_count < sv.alert_limit
+        ):
+            product = Product.objects.filter(id=product_id).first()
+            if product:
+                from .notify_events import AlertLimitReached
 
-                    for shop in self.supplier.shops.all():
-                        supplier_email = self.supplier.contact_address.email if self.supplier.contact_address else ""
-                        shop_email = shop.contact_address.email if shop.contact_address else ""
-                        AlertLimitReached(
-                            supplier=self.supplier,
-                            product=product,
-                            shop_email=shop_email,
-                            supplier_email=supplier_email,
-                        ).run(shop=shop)
+                for shop in self.supplier.shops.all():
+                    supplier_email = self.supplier.contact_address.email if self.supplier.contact_address else ""
+                    shop_email = shop.contact_address.email if shop.contact_address else ""
+                    AlertLimitReached(
+                        supplier=self.supplier,
+                        product=product,
+                        shop_email=shop_email,
+                        supplier_email=supplier_email,
+                    ).run(shop=shop)
 
         sv.save(update_fields=("logical_count", "physical_count", "stock_value_value"))
         context_cache.bump_cache_for_product(product_id)

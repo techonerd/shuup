@@ -43,17 +43,12 @@ class CustomerSalesReport(OrderReportMixin, ShuupReportBase):
         )
 
     def get_data(self):
-        data = []
-
-        for contact in self.get_objects():
-            data.append(
-                {
+        data = [{
                     "customer": contact["name"],
                     "order_count": contact["order_count"],
                     "average_sales": self.shop.create_price(contact["average_sales"]),
                     "taxless_total": self.shop.create_price(contact["taxless_total"]),
                     "taxful_total": self.shop.create_price(contact["taxful_total"]),
-                }
-            )
+                } for contact in self.get_objects()]
 
         return self.get_return_data(data)

@@ -115,10 +115,10 @@ def _get_configuration_from_db(shop):
     :return: Configuration as it was saved in database
     :rtype: dict
     """
-    configuration = {}
-    for conf_item in ConfigurationItem.objects.filter(shop=shop):
-        configuration[conf_item.key] = conf_item.value
-    return configuration
+    return {
+        conf_item.key: conf_item.value
+        for conf_item in ConfigurationItem.objects.filter(shop=shop)
+    }
 
 
 _SHOP_CONF_NAMESPACE = str("shop_config")
